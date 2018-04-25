@@ -21,6 +21,10 @@ namespace NEO_Block_API.lib
         public string mongodbDatabase_mainnet = string.Empty;
         public string neoCliJsonRPCUrl_mainnet = string.Empty;
 
+        public string mongodbConnStr_privatenet = string.Empty;
+        public string mongodbDatabase_privatenet = string.Empty;
+        public string neoCliJsonRPCUrl_privatenet = string.Empty;
+
         public string mongodbConnStr_NeonOnline = string.Empty;
         public string mongodbDatabase_NeonOnline = string.Empty;
 
@@ -37,6 +41,10 @@ namespace NEO_Block_API.lib
             mongodbConnStr_mainnet = config["mongodbConnStr_mainnet"];
             mongodbDatabase_mainnet = config["mongodbDatabase_mainnet"];
             neoCliJsonRPCUrl_mainnet = config["neoCliJsonRPCUrl_mainnet"];
+
+            mongodbConnStr_privatenet = config["mongodbConnStr_privatenet"];
+            mongodbDatabase_privatenet = config["mongodbDatabase_privatenet"];
+            neoCliJsonRPCUrl_privatenet = config["neoCliJsonRPCUrl_privatenet"];
 
             mongodbConnStr_NeonOnline = config["mongodbConnStr_NeonOnline"];
             mongodbDatabase_NeonOnline = config["mongodbDatabase_NeonOnline"];

@@ -35,6 +35,11 @@ namespace NEO_Block_API.Controllers
                     mongodbDatabase = mh.mongodbDatabase_mainnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_mainnet;
                     break;
+                case "privatenet":
+                    mongodbConnStr = mh.mongodbConnStr_privatenet;
+                    mongodbDatabase = mh.mongodbDatabase_privatenet;
+                    neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_privatenet;
+                    break;
             }
         }
 
