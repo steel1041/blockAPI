@@ -25,6 +25,19 @@ namespace NEO_Block_API
             { return false; }
         }
 
+        public class AssetBalanceOfAddr
+        {
+            public AssetBalanceOfAddr(string Assetid,string Symbol,string Balance) {
+                assetid = Assetid;
+                symbol = Symbol;
+                balance = Balance;
+            }
+
+            public string assetid { get; set; }
+            public string symbol { get; set; }
+            public string balance { get; set; }
+        }
+
         [BsonIgnoreExtraElements]
         public class Asset
         {
@@ -50,6 +63,17 @@ namespace NEO_Block_API
         [BsonIgnoreExtraElements]
         public class Transfer
         {
+            public Transfer(JObject tfJ)
+            {
+                blockindex = (int)tfJ["blockindex"];
+                txid = (string)tfJ["txid"];
+                n = (int)tfJ["n"];
+                asset = (string)tfJ["asset"];
+                from = (string)tfJ["from"];
+                to = (string)tfJ["to"];
+                value = (decimal)tfJ["value"];
+            }
+
             public Transfer(int Blockindex, string Txid, int N, JObject notification, int decimals)
             {
                 blockindex = Blockindex;
@@ -76,8 +100,6 @@ namespace NEO_Block_API
                 {
                     value = -1;
                 }
-
-
             }
 
             public ObjectId _id { get; set; }
@@ -100,8 +122,26 @@ namespace NEO_Block_API
             { return string.Empty; } //ICO mintToken 等情况    
         }
 
+        //根据数据类型自动判断处理方式
+        public static string getNumStrFromStr(string dataType, string Str, int decimals)
+        {
+            if (Str != string.Empty)
+            {
+                if (dataType == "ByteArray")//标准nep5
+                {
+                    return getNumStrFromHexStr(Str, decimals);
+                }
+                else if (dataType == "Integer")//变种nep5
+                {
+                    return getNumStrFromIntStr(Str, decimals);
+                }
+            }
+
+            return "0"; 
+        }
+
         //十六进制转数值（考虑精度调整）
-        public static string getNumStrFromHexStr(string hexStr, int decimals)
+        private static string getNumStrFromHexStr(string hexStr, int decimals)
         {
             //小头换大头
             byte[] bytes = ThinNeo.Helper.HexString2Bytes(hexStr).Reverse().ToArray();
@@ -115,7 +155,7 @@ namespace NEO_Block_API
         }
 
         //大整数文本转数值（考虑精度调整）
-        public static string getNumStrFromIntStr(string intStr, int decimals)
+        private static string getNumStrFromIntStr(string intStr, int decimals)
         {
             BigInteger bi = BigInteger.Parse(intStr);
 

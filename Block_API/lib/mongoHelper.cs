@@ -21,10 +21,6 @@ namespace NEO_Block_API.lib
         public string mongodbDatabase_mainnet = string.Empty;
         public string neoCliJsonRPCUrl_mainnet = string.Empty;
 
-        public string mongodbConnStr_privatenet = string.Empty;
-        public string mongodbDatabase_privatenet = string.Empty;
-        public string neoCliJsonRPCUrl_privatenet = string.Empty;
-
         public string mongodbConnStr_NeonOnline = string.Empty;
         public string mongodbDatabase_NeonOnline = string.Empty;
 
@@ -42,10 +38,6 @@ namespace NEO_Block_API.lib
             mongodbDatabase_mainnet = config["mongodbDatabase_mainnet"];
             neoCliJsonRPCUrl_mainnet = config["neoCliJsonRPCUrl_mainnet"];
 
-            mongodbConnStr_privatenet = config["mongodbConnStr_privatenet"];
-            mongodbDatabase_privatenet = config["mongodbDatabase_privatenet"];
-            neoCliJsonRPCUrl_privatenet = config["neoCliJsonRPCUrl_privatenet"];
-
             mongodbConnStr_NeonOnline = config["mongodbConnStr_NeonOnline"];
             mongodbDatabase_NeonOnline = config["mongodbDatabase_NeonOnline"];
         }
@@ -61,7 +53,6 @@ namespace NEO_Block_API.lib
 
             if (query.Count > 0)
             {
-
                 var jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.Strict };
                 JArray JA = JArray.Parse(query.ToJson(jsonWriterSettings));
                 foreach (JObject j in JA)
@@ -103,6 +94,19 @@ namespace NEO_Block_API.lib
             var collection = database.GetCollection<BsonDocument>(coll);
 
             var txCount = collection.Find(new BsonDocument()).Count();
+
+            client = null;
+
+            return txCount;
+        }
+
+        public long GetDataCount(string mongodbConnStr, string mongodbDatabase, string coll, string findBson)
+        {
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collection = database.GetCollection<BsonDocument>(coll);
+
+            var txCount = collection.Find(BsonDocument.Parse(findBson)).Count();
 
             client = null;
 

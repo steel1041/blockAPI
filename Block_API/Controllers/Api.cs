@@ -13,7 +13,7 @@ namespace NEO_Block_API.Controllers
     {
         private string netnode { get; set; }
         private string mongodbConnStr { get; set; }
-        private string mongodbDatabase { get; set; }   
+        private string mongodbDatabase { get; set; }
         private string neoCliJsonRPCUrl { get; set; }
 
         httpHelper hh = new httpHelper();
@@ -34,11 +34,6 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
                     mongodbDatabase = mh.mongodbDatabase_mainnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_mainnet;
-                    break;
-                case "privatenet":
-                    mongodbConnStr = mh.mongodbConnStr_privatenet;
-                    mongodbDatabase = mh.mongodbDatabase_privatenet;
-                    neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_privatenet;
                     break;
             }
         }
@@ -99,7 +94,17 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "gettxcount":
                         //resultStr = "[{txcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx") + "}]";
-                        result = getJAbyKV("txcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx"));
+                        //result = getJAbyKV("txcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx"));
+                        findFliter = "{}";
+                        if (req.@params.Count() > 0)
+                        {
+                            string type = req.@params[0].ToString();
+                            if (type != null && type != string.Empty)
+                            {
+                                findFliter = "{type:\"" + type + "\"}";
+                            }
+                        }
+                        result = getJAbyKV("txcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx", findFliter));
                         break;
                     case "getaddrcount":
                         //resultStr = "[{addrcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "address") + "}]";
@@ -132,6 +137,11 @@ namespace NEO_Block_API.Controllers
                     case "getaddrs":
                         sortStr = "{'lastuse.blockindex' : -1,'lastuse.txid' : -1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "address", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()));
+                        break;
+                    case "getaddr":
+                        string addr = req.@params[0].ToString();
+                        findFliter = "{addr:'" + addr + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "address", findFliter);
                         break;
                     case "getaddresstxs":
                         string findBson = "{'addr':'" + req.@params[0].ToString() + "'}";
@@ -183,6 +193,14 @@ namespace NEO_Block_API.Controllers
                             sortStr = "{'createHeight':1,'txid':1,'n':1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "utxo", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
+                        break;
+                    case "getutxocount":
+                        addr = req.@params[0].ToString();
+                        if (addr != null && addr != string.Empty)
+                        {
+                            findFliter = "{addr:\"" + addr + "\"}";
+                        }
+                        result = getJAbyKV("utxocount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "utxo", findFliter));
                         break;
                     case "getutxostopay":
                         string address = (string)req.@params[0];
@@ -302,7 +320,7 @@ namespace NEO_Block_API.Controllers
 
                         break;
                     case "callcontractfortest":
-                        result = getJAbyJ(ct.callContractForTest(neoCliJsonRPCUrl, (string)req.@params[0], (JArray)req.@params[1]));
+                        result = getJAbyJ(ct.callContractForTest(neoCliJsonRPCUrl, new List<string> { (string)req.@params[0] }, new JArray() { (JArray)req.@params[1] }));
 
                         break;
                     case "publishcontractfortest":
@@ -364,13 +382,14 @@ namespace NEO_Block_API.Controllers
                         //};
 
                         break;
-                    case "getnep5blanceofaddress":
+                    case "getnep5balanceofaddress":
                         string NEP5scripthash = (string)req.@params[0];
                         string NEP5address = (string)req.@params[1];
                         byte[] NEP5addrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP5address);
-                        string NEP5addrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5addrHash);
-                        JObject NEP5balanceOfJ = ct.callContractForTest(neoCliJsonRPCUrl, NEP5scripthash, JArray.Parse("['(str)balanceOf',['(hex)" + NEP5addrHashHex + "']]"));
+                        string NEP5addrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5addrHash.Reverse().ToArray());
+                        JObject NEP5balanceOfJ = ct.callContractForTest(neoCliJsonRPCUrl,new List<string>{ NEP5scripthash }, new JArray() { JArray.Parse("['(str)balanceOf',['(hex)" + NEP5addrHashHex + "']]") });
                         string balanceStr = (string)((JArray)NEP5balanceOfJ["stack"])[0]["value"];
+                        string balanceType = (string)((JArray)NEP5balanceOfJ["stack"])[0]["type"];
 
                         string balanceBigint = "0";
 
@@ -379,10 +398,116 @@ namespace NEO_Block_API.Controllers
                             //获取NEP5资产信息，获取精度
                             NEP5.Asset NEP5asset = new NEP5.Asset(mongodbConnStr, mongodbDatabase, NEP5scripthash);
 
-                            balanceBigint = NEP5.getNumStrFromHexStr(balanceStr, NEP5asset.decimals);
+                            balanceBigint = NEP5.getNumStrFromStr(balanceType,balanceStr, NEP5asset.decimals);
                         }
 
-                        result = getJAbyKV("nep5blance", balanceBigint);
+                        result = getJAbyKV("nep5balance", balanceBigint);
+                        break;
+                    case "getallnep5assetofaddress":
+                        string NEP5addr = (string)req.@params[0];
+                        bool isNeedBalance = false;
+                        if (req.@params.Count() > 1)
+                        {
+                            isNeedBalance = ((Int64)req.@params[1] == 1) ? true : false;
+                        }
+                        
+                        //按资产汇集收到的钱(仅资产ID)
+                        string findTransferTo = "{ to:'" + NEP5addr + "'}";
+                        JArray transferToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findTransferTo);
+                        List<NEP5.Transfer> tfts = new List<NEP5.Transfer>();
+                        foreach (JObject tfJ in transferToJA)
+                        {
+                            tfts.Add(new NEP5.Transfer(tfJ));
+                        }
+                        var queryTo = from tft in tfts
+                                    group tft by tft.asset into tftG
+                                    select new { assetid = tftG.Key};
+                        var assetAdds = queryTo.ToList();
+
+                        //如果需要余额，则通过cli RPC批量获取余额
+                        List<NEP5.AssetBalanceOfAddr> addrAssetBalances = new List<NEP5.AssetBalanceOfAddr>();
+                        if (isNeedBalance) {
+                            List<NEP5.AssetBalanceOfAddr> addrAssetBalancesTemp = new List<NEP5.AssetBalanceOfAddr>();
+                            foreach (var assetAdd in assetAdds)
+                            {
+                                string findNep5Asset = "{assetid:'" + assetAdd.assetid + "'}";
+                                JArray Nep5AssetJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5asset", findNep5Asset);
+                                string Symbol = (string)Nep5AssetJA[0]["symbol"];
+
+                                addrAssetBalancesTemp.Add(new NEP5.AssetBalanceOfAddr(assetAdd.assetid, Symbol, string.Empty));
+                            }
+
+                            List<string> nep5Hashs = new List<string>();
+                            JArray queryParams = new JArray();
+                            byte[] NEP5allAssetOfAddrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP5addr);
+                            string NEP5allAssetOfAddrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5allAssetOfAddrHash.Reverse().ToArray());
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                nep5Hashs.Add(abt.assetid);
+                                queryParams.Add(JArray.Parse("['(str)balanceOf',['(hex)" + NEP5allAssetOfAddrHashHex + "']]"));                               
+                            }
+                            JArray NEP5allAssetBalanceJA = (JArray)ct.callContractForTest(neoCliJsonRPCUrl, nep5Hashs, queryParams)["stack"];
+                            var a = Newtonsoft.Json.JsonConvert.SerializeObject(NEP5allAssetBalanceJA);
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                string allBalanceStr = (string)NEP5allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["value"];
+                                string allBalanceType = (string)NEP5allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["type"];
+                                //获取NEP5资产信息，获取精度
+                                NEP5.Asset NEP5asset = new NEP5.Asset(mongodbConnStr, mongodbDatabase, abt.assetid);
+
+                                abt.balance = NEP5.getNumStrFromStr(allBalanceType,allBalanceStr, NEP5asset.decimals);
+                            }
+
+                            //去除余额为0的资产
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                if (abt.balance != string.Empty && abt.balance != "0")
+                                {
+                                    addrAssetBalances.Add(abt);
+                                }
+                            }
+                        }
+
+                        ////按资产汇集支出的钱
+                        //string findTransferFrom = "{ from:'" + NEP5addr + "'}";
+                        //JArray transferFromJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findTransferFrom);
+                        //List<NEP5.Transfer> tffs = new List<NEP5.Transfer>();
+                        //foreach (JObject tfJ in transferFromJA)
+                        //{
+                        //    tffs.Add(new NEP5.Transfer(tfJ));
+                        //}
+                        //var queryFrom = from tff in tffs
+                        //                group tff by tff.asset into tffG
+                        //            select new { assetid = tffG.Key, sumOfValue = tffG.Sum(m => m.value) };
+                        //var assetRemoves = queryFrom.ToList();
+
+                        ////以支出的钱扣减收到的钱得到余额
+                        //JArray JAadds = JArray.FromObject(assetAdds);
+                        //foreach (JObject Jadd in JAadds) {
+                        //    foreach (var assetRemove in assetRemoves)
+                        //    {
+                        //        if ((string)Jadd["assetid"] == assetRemove.assetid)
+                        //        {
+                        //            Jadd["sumOfValue"] = (decimal)Jadd["sumOfValue"] - assetRemove.sumOfValue;
+                        //            break;
+                        //        }
+                        //    }
+                        //}
+                        //var a = Newtonsoft.Json.JsonConvert.SerializeObject(JAadds);
+
+                        //***********
+                        //经简单测试，仅看transfer记录，所有to减去所有from并不一定等于合约查询得到的地址余额(可能有其他非标方法消耗了余额，尤其是测试网)，废弃这种方法，还是采用调用NEP5合约获取地址余额方法的方式
+                        //这里给出所有该地址收到过的资产hash，可以配合其他接口获取资产信息和余额
+                        //***********
+                        if (!isNeedBalance)
+                        {
+                            result = JArray.FromObject(assetAdds);
+                        }
+                        else
+                        {
+                            result = JArray.FromObject(addrAssetBalances);
+                        }                   
+
                         break;
                     case "getnep5asset":
                         findFliter = "{assetid:'" + ((string)req.@params[0]).formatHexStr() + "'}";
@@ -407,6 +532,21 @@ namespace NEO_Block_API.Controllers
                     case "getnep5transfers":
                         sortStr = "{'blockindex':1,'txid':1,'n':1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()));
+                        break;
+                    case "getnep5transfersbyasset":
+                        string str_asset = ((string)req.@params[0]).formatHexStr();
+                        findFliter = "{asset:'" + str_asset + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
+                        break;
+                    case "getnep5transferbyblockindex":
+                        Int64 blockindex = (Int64)req.@params[0];
+                        findFliter = "{blockindex:" + blockindex + "}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
+                        break;
+                    case "getaddresstxbyblockindex":
+                        blockindex = (Int64)req.@params[0];
+                        findFliter = "{blockindex:" + blockindex + "}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "address_tx", findFliter);
                         break;
                 }
                 if (result.Count == 0)
