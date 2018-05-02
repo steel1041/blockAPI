@@ -553,6 +553,84 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{blockindex:" + blockindex + "}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "address_tx", findFliter);
                         break;
+                    case "saveCDPTransferInfo":
+                        JObject obj =new  JObject();
+                        obj.Add("from", (string)req.@params[0]);
+                        txid = (string)req.@params[1];
+                        obj.Add("txid", txid);
+                        obj.Add("locked", Convert.ToDecimal(req.@params[2]));
+                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
+                   
+                        Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "deleteCDPTransferInfoByTxid":
+                        flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo","txid", (string)req.@params[0]);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "updateCDPTransferInfo":
+                        obj = new JObject();
+                        obj.Add("from", (string)req.@params[0]);
+                        txid = (string)req.@params[1];
+                        obj.Add("locked", Convert.ToDecimal(req.@params[2]));
+                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
+
+                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "findCDPTransferInfoByTxid":
+                        findFliter = "{txid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferInfo", findFliter);
+
+                        break;
+                    case "saveCDPTransferDetail":
+                        obj = new JObject();
+                        obj.Add("from", (string)req.@params[0]);
+                        obj.Add("cdpTxid", (string)req.@params[1]);
+                        txid = (string)req.@params[2];
+                        obj.Add("txid", txid);
+                        obj.Add("locked", Convert.ToDecimal(req.@params[3]));
+                        obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
+                        obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
+                        obj.Add("type", (string)req.@params[6]);
+
+                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "deleteCDPTransferDetailByTxid":
+                        flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", "txid", (string)req.@params[0]);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "updateCDPTransferDetailByTxid":
+                        obj = new JObject();
+                        obj.Add("from", (string)req.@params[0]);
+                        obj.Add("cdpTxid", (string)req.@params[1]);
+                        txid = (string)req.@params[2];
+                        obj.Add("txid", txid);
+                        obj.Add("locked", Convert.ToDecimal(req.@params[3]));
+                        obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
+                        obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
+                        obj.Add("type", (string)req.@params[6]);
+
+                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
+                        result = getJAbyKV("isSuccess", flag);
+
+                        break;
+                    case "findCDPTransferDetailByTxid":
+                        findFliter = "{txid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+
+                        break;
+                    case "findCDPTransferDetailByCDPTxid":
+                        findFliter = "{cdpTxid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+
+                        break;
                 }
                 if (result.Count == 0)
                 {
