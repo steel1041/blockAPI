@@ -174,8 +174,9 @@ namespace NEO_Block_API.lib
             return JA;
         }
 
-        public void InsertOneDataByCheckKey(string mongodbConnStr, string mongodbDatabase, string coll, JObject Jdata,string key,string value)
+        public Boolean InsertOneDataByCheckKey(string mongodbConnStr, string mongodbDatabase, string coll, JObject Jdata,string key,string value)
         {
+            Boolean flag = false;
             var client = new MongoClient(mongodbConnStr);
             var database = client.GetDatabase(mongodbDatabase);
             var collection = database.GetCollection<BsonDocument>(coll);
@@ -184,11 +185,14 @@ namespace NEO_Block_API.lib
             if (query.Count == 0) {
                 string strData = Newtonsoft.Json.JsonConvert.SerializeObject(Jdata);
                 BsonDocument bson = BsonDocument.Parse(strData);
-                bson.Add("getTime", DateTime.Now);
+                bson.Add("addTime", DateTime.Now);
+                bson.Add("updateTime", "");
                 collection.InsertOne(bson);
+                flag = true;
             }
 
             client = null;
+            return flag;
         }
 
         public decimal GetTotalSysFeeByBlock(string mongodbConnStr, string mongodbDatabase, int blockindex)
@@ -210,6 +214,41 @@ namespace NEO_Block_API.lib
             client = null;
 
             return totalSysFee;
+        }
+
+        public Boolean deleteByKey(string mongodbConnStr, string mongodbDatabase, string coll, string key, string value)
+        {
+            Boolean flag = false;
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collection = database.GetCollection<BsonDocument>(coll);
+            DeleteResult result=collection.DeleteOne("{'" + key + "':'" + value + "'}");
+            if (result.DeletedCount>0) {
+                flag = true;
+            }
+            client = null;
+            return flag;
+        }
+
+        public Boolean updateDataByKey(string mongodbConnStr, string mongodbDatabase, string coll, JObject Jdata, string key, string value)
+        {
+            Boolean flag = false;
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collection = database.GetCollection<BsonDocument>(coll);
+
+            string strData = Newtonsoft.Json.JsonConvert.SerializeObject(Jdata);
+            BsonDocument bson = BsonDocument.Parse(strData);
+            bson.Add("updateTime", DateTime.Now);
+
+            UpdateResult result = collection.UpdateOne("{'" + key + "':'" + value + "'}", "{$set:"+bson+"}");
+            if (result.ModifiedCount > 0 || result.MatchedCount > 0)
+            {
+                flag = true;
+            }
+
+            client = null;
+            return flag;
         }
     }
 }
