@@ -560,7 +560,8 @@ namespace NEO_Block_API.Controllers
                         obj.Add("txid", txid);
                         obj.Add("locked", Convert.ToDecimal(req.@params[2]));
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
-                   
+                        obj.Add("status", Convert.ToInt32(req.@params[4]));
+
                         Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
 
@@ -576,6 +577,7 @@ namespace NEO_Block_API.Controllers
                         txid = (string)req.@params[1];
                         obj.Add("locked", Convert.ToDecimal(req.@params[2]));
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
+                        obj.Add("status", Convert.ToInt32(req.@params[4]));
 
                         flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
@@ -583,6 +585,11 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "findCDPTransferInfoByTxid":
                         findFliter = "{txid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferInfo", findFliter);
+
+                        break;
+                    case "findCDPTransferInfoByFrom":
+                        findFliter = "{from:'" + req.@params[0] + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferInfo", findFliter);
 
                         break;
@@ -595,7 +602,7 @@ namespace NEO_Block_API.Controllers
                         obj.Add("locked", Convert.ToDecimal(req.@params[3]));
                         obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
                         obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("type", (string)req.@params[6]);
+                        obj.Add("type", Convert.ToInt32(req.@params[6]));
 
                         flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
@@ -615,7 +622,7 @@ namespace NEO_Block_API.Controllers
                         obj.Add("locked", Convert.ToDecimal(req.@params[3]));
                         obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
                         obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("type", (string)req.@params[6]);
+                        obj.Add("type", Convert.ToInt32(req.@params[6]));
 
                         flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
@@ -628,6 +635,11 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "findCDPTransferDetailByCDPTxid":
                         findFliter = "{cdpTxid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+
+                        break;
+                    case "findCDPTransferDetailByFrom":
+                        findFliter = "{from:'" + req.@params[0] + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
 
                         break;
