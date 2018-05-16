@@ -599,9 +599,9 @@ namespace NEO_Block_API.Controllers
                         obj.Add("cdpTxid", (string)req.@params[1]);
                         txid = (string)req.@params[2];
                         obj.Add("txid", txid);
-                        obj.Add("locked", Convert.ToDecimal(req.@params[3]));
+                        obj.Add("operated", Convert.ToDecimal(req.@params[3]));
                         obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
-                        obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
+                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
                         obj.Add("type", Convert.ToInt32(req.@params[6]));
 
                         flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
@@ -619,9 +619,9 @@ namespace NEO_Block_API.Controllers
                         obj.Add("cdpTxid", (string)req.@params[1]);
                         txid = (string)req.@params[2];
                         obj.Add("txid", txid);
-                        obj.Add("locked", Convert.ToDecimal(req.@params[3]));
+                        obj.Add("operated", Convert.ToDecimal(req.@params[3]));
                         obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
-                        obj.Add("drawed", Convert.ToDecimal(req.@params[5]));
+                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
                         obj.Add("type", Convert.ToInt32(req.@params[6]));
 
                         flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
