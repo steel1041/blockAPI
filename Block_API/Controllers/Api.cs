@@ -553,7 +553,7 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{blockindex:" + blockindex + "}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "address_tx", findFliter);
                         break;
-                    case "saveCDPTransferInfo":
+                    case "saveSARToC":
                         JObject obj =new  JObject();
                         obj.Add("from", (string)req.@params[0]);
                         txid = (string)req.@params[1];
@@ -562,16 +562,16 @@ namespace NEO_Block_API.Controllers
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
                         obj.Add("status", Convert.ToInt32(req.@params[4]));
 
-                        Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
+                        Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
 
                         break;
-                    case "deleteCDPTransferInfoByTxid":
-                        flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo","txid", (string)req.@params[0]);
-                        result = getJAbyKV("isSuccess", flag);
+                    //case "deleteCDPTransferInfoByTxid":
+                    //    flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo","txid", (string)req.@params[0]);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
-                    case "updateCDPTransferInfo":
+                    //    break;
+                    case "updateSARToC":
                         obj = new JObject();
                         obj.Add("from", (string)req.@params[0]);
                         txid = (string)req.@params[1];
@@ -579,24 +579,29 @@ namespace NEO_Block_API.Controllers
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
                         obj.Add("status", Convert.ToInt32(req.@params[4]));
 
-                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo", obj, "txid", txid);
+                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
 
                         break;
-                    case "findCDPTransferInfoByTxid":
+                    case "findSARToCByTxid":
                         findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferInfo", findFliter);
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
 
                         break;
-                    case "findCDPTransferInfoByFrom":
+                    case "findSARToCByFrom":
                         findFliter = "{from:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferInfo", findFliter);
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
 
                         break;
-                    case "saveCDPTransferDetail":
+                    case "findSARToCByStatus":
+                        findFliter = "{status:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
+
+                        break;
+                    case "saveSARToCDetail":
                         obj = new JObject();
                         obj.Add("from", (string)req.@params[0]);
-                        obj.Add("cdpTxid", (string)req.@params[1]);
+                        obj.Add("sarTxid", (string)req.@params[1]);
                         txid = (string)req.@params[2];
                         obj.Add("txid", txid);
                         obj.Add("operated", Convert.ToDecimal(req.@params[3]));
@@ -604,19 +609,19 @@ namespace NEO_Block_API.Controllers
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
                         obj.Add("type", Convert.ToInt32(req.@params[6]));
 
-                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
+                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
 
                         break;
-                    case "deleteCDPTransferDetailByTxid":
-                        flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", "txid", (string)req.@params[0]);
-                        result = getJAbyKV("isSuccess", flag);
+                    //case "deleteCDPTransferDetailByTxid":
+                    //    flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", "txid", (string)req.@params[0]);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
-                    case "updateCDPTransferDetailByTxid":
+                    //    break;
+                    case "updateSARToCDetailByTxid":
                         obj = new JObject();
                         obj.Add("from", (string)req.@params[0]);
-                        obj.Add("cdpTxid", (string)req.@params[1]);
+                        obj.Add("sarTxid", (string)req.@params[1]);
                         txid = (string)req.@params[2];
                         obj.Add("txid", txid);
                         obj.Add("operated", Convert.ToDecimal(req.@params[3]));
@@ -624,23 +629,23 @@ namespace NEO_Block_API.Controllers
                         obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
                         obj.Add("type", Convert.ToInt32(req.@params[6]));
 
-                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", obj, "txid", txid);
+                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
                         result = getJAbyKV("isSuccess", flag);
 
                         break;
-                    case "findCDPTransferDetailByTxid":
+                    case "findSARToCDetailByTxid":
                         findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
                         break;
-                    case "findCDPTransferDetailByCDPTxid":
-                        findFliter = "{cdpTxid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+                    case "findSARToCDetailBySARTxid":
+                        findFliter = "{sarTxid:'" + req.@params[0] + "'}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
                         break;
-                    case "findCDPTransferDetailByFrom":
+                    case "findSARToCDetailByFrom":
                         findFliter = "{from:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "CDPTransferDetail", findFliter);
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
                         break;
                 }
