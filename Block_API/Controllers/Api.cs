@@ -328,6 +328,9 @@ namespace NEO_Block_API.Controllers
                         result = getJAbyJ(ct.callContractForTest(neoCliJsonRPCUrl, new List<string> { (string)req.@params[0] }, new JArray() { (JArray)req.@params[1] }));
 
                         break;
+                    case "callnep55common":
+                        result = getJAbyJ(ct.callnep55common(neoCliJsonRPCUrl,new List<string> { (string)req.@params[0]},new JArray() { (JArray)req.@params[1]}));
+                        break;
                     case "publishcontractfortest":
                         result = getJAbyJ(ct.publishContractForTest(neoCliJsonRPCUrl, (string)req.@params[0], (JObject)req.@params[1]));
                         break;

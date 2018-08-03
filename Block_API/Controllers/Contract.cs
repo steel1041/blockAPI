@@ -73,6 +73,31 @@ namespace NEO_Block_API.Controllers
             return invokeScript(neoCliJsonRPCUrl, scriptPlusParams);
         }
 
+        public JObject callnep55common(string neoCliJsonRPCUrl, List<string> scripthashs, JArray paramsJA)
+        {
+            int n = 0;
+            ThinNeo.ScriptBuilder sb = new ThinNeo.ScriptBuilder();
+            foreach (var scripthash in scripthashs)
+            {
+                var json = MyJson.Parse(JsonConvert.SerializeObject(paramsJA[n])).AsList();
+
+                var list = json.AsList();
+                for (int i = list.Count - 1; i >= 0; i--)
+                {
+                    sb.EmitParamJson(list[i]);
+                }
+
+                var scripthashReverse = ThinNeo.Helper.HexString2Bytes(scripthash).Reverse().ToArray();
+                sb.EmitAppCall(scripthashReverse);
+
+                n++;
+            }
+
+            string scriptPlusParams = ThinNeo.Helper.Bytes2HexString(sb.ToArray());
+
+            return invokeScript(neoCliJsonRPCUrl, scriptPlusParams);
+        }
+
         public JObject publishContractForTest(string neoCliJsonRPCUrl, string avmHexstring, JObject infoJ)
         {
             string cName = (string)infoJ["cName"];
