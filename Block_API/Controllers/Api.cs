@@ -119,6 +119,11 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{index:" + req.@params[0] + "}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter);
                         break;
+                    case "getblocktime":
+                        findFliter = "{index:" + req.@params[0] + "}";
+                        var time = (Int32)mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter)[0]["time"];
+                        result = getJAbyKV("time", time);
+                        break;
                     case "getblocks":
                         sortStr = "{index:-1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "block", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()));
@@ -544,7 +549,73 @@ namespace NEO_Block_API.Controllers
                     case "getnep5transfersbyasset":
                         string str_asset = ((string)req.@params[0]).formatHexStr();
                         findFliter = "{asset:'" + str_asset + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
+                        //sortStr = "{'blockindex':1,'txid':1,'n':1}";
+                        sortStr = "{}";
+                        if (req.@params.Count() == 3)
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        else
+                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
+                        break;
+                    //获取所有nep55资产
+                    case "getnep55asset":
+                        findFliter = "{}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP55asset", findFliter);
+                        break;
+                    case "getnep55transfersbyname":
+                        string nep55_name = "";
+                 
+                        if (req.@params.Count() == 3)
+                        {
+                            nep55_name = (string)req.@params[0];
+                            findFliter = "{name:'" + nep55_name + "'}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "transferSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+
+                        }
+                        else if (req.@params.Count() == 4) {
+                            nep55_name = (string)req.@params[0];
+                            addr = (string)req.@params[1];
+                            findFliter = "{name:'" + nep55_name + "',from:'" + addr + "'}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "transferSAR", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else
+                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "transferSAR", findFliter);
+                        break;
+                    //根据用户名获取所有代币名称
+                    case "getnep55nameByaddr":
+                        //to do ...
+                        break;
+                    case "getsarOperatedByaddr":
+                        if (req.@params.Count() == 4)
+                        {
+                            nep55_name = (string)req.@params[0];
+                            addr = (string)req.@params[1];
+                            findFliter = "{name:'" + nep55_name + "',addr:'" + addr + "'}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 3)
+                        {
+                            nep55_name = (string)req.@params[0];
+                            findFliter = "{name:'" + nep55_name + "'}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedSAR", findFliter);
+                        }
+                        break;
+                    case "getnep5count":
+                        findFliter = "{}";
+                        if (req.@params.Count() == 2)
+                        {
+                            string key = (string)req.@params[0];
+                            string value = (string)req.@params[1];
+                            findFliter = "{\"" + key + "\":\"" + value + "\"}";
+                        }
+                        result = getJAbyKV("nep5count", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter));
                         break;
                     case "getnep5transferbyblockindex":
                         Int64 blockindex = (Int64)req.@params[0];
@@ -555,6 +626,96 @@ namespace NEO_Block_API.Controllers
                         blockindex = (Int64)req.@params[0];
                         findFliter = "{blockindex:" + blockindex + "}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "address_tx", findFliter);
+                        break;
+                    case "gettxinfo":
+                        txid = ((string)req.@params[0]).formatHexStr();
+                        findFliter = "{txid:'" + (txid).formatHexStr() + "'}";
+                        JArray JATx = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+                        JObject JOTx = (JObject)JATx[0];
+                        var heightforblock = (int)JOTx["blockindex"];
+                        var indexforblock = -1;
+                        findFliter = "{index:" + heightforblock + "}";
+                        result = (JArray)mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter)[0]["tx"];
+                        for (var i = 0; i < result.Count; i++)
+                        {
+                            JObject Jo = (JObject)result[i];
+                            if (txid == (string)Jo["txid"])
+                            {
+                                indexforblock = i;
+                            }
+                        }
+                        JObject JOresult = new JObject();
+                        JOresult["heightforblock"] = heightforblock;
+                        JOresult["indexforblock"] = indexforblock;
+                        result = new JArray() { JOresult };
+                        break;
+                    case "uxtoinfo":
+                        var starttxid = ((string)req.@params[0]).formatHexStr();
+                        var voutN = (Int64)req.@params[1];
+
+                        findFliter = "{txid:'" + (starttxid).formatHexStr() + "'}";
+                        JATx = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+                        JOTx = (JObject)JATx[0];
+                        int starttxblockheight = (int)JOTx["blockindex"];
+                        int starttxblockindex = -1;
+                        findFliter = "{index:" + starttxblockheight + "}";
+                        result = (JArray)mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter)[0]["tx"];
+                        for (var i = 0; i < result.Count; i++)
+                        {
+                            JObject Jo = (JObject)result[i];
+                            if (starttxid == (string)Jo["txid"])
+                            {
+                                starttxblockindex = i;
+                            }
+                        }
+                        //根据txid和n获取utxo信息
+                        findFliter = "{txid:\"" + starttxid + "\",n:" + voutN + "}";
+                        var endtxid = (string)mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter)[0]["used"];
+                        int endtxblockheight = -1;
+                        int endtxblockindex = -1;
+                        int vinputN = -1;
+                        if (!string.IsNullOrEmpty(endtxid))
+                        {
+                            findFliter = "{txid:'" + (endtxid).formatHexStr() + "'}";
+                            JATx = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+                            JOTx = (JObject)JATx[0];
+                            endtxblockheight = (int)JOTx["blockindex"];
+                            JArray JAvin = (JArray)JOTx["vin"];
+                            findFliter = "{index:" + endtxblockheight + "}";
+                            result = (JArray)mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter)[0]["tx"];
+                            for (var i = 0; i < result.Count; i++)
+                            {
+                                JObject Jo = (JObject)result[i];
+                                if (endtxid == (string)Jo["txid"])
+                                {
+                                    endtxblockindex = i;
+                                }
+                            }
+                            for (var i = 0; i < JAvin.Count; i++)
+                            {
+                                JObject Jo = (JObject)JAvin[i];
+                                if ((string)Jo["txid"] == starttxid && voutN == i)
+                                {
+                                    vinputN = i;
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                        }
+
+                        JOresult = new JObject();
+                        JOresult["starttxid"] = starttxid;
+                        JOresult["starttxblockheight"] = starttxblockheight;
+                        JOresult["starttxblockindex"] = starttxblockindex;
+                        JOresult["voutN"] = voutN;
+                        JOresult["endtxid"] = endtxid;
+                        JOresult["endtxblockheight"] = endtxblockheight;
+                        JOresult["endtxblockindex"] = endtxblockindex;
+                        JOresult["vinputN"] = vinputN;
+                        result = new JArray() { JOresult };
+
                         break;
                     case "findTxByTxid":
                         findFliter = "{txid:'" + req.@params[0] + "'}";
@@ -618,11 +779,7 @@ namespace NEO_Block_API.Controllers
                         result = getJAbyKV("isSuccess", flag);
 
                         break;
-                    //case "deleteCDPTransferDetailByTxid":
-                    //    flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferDetail", "txid", (string)req.@params[0]);
-                    //    result = getJAbyKV("isSuccess", flag);
-
-                    //    break;
+                    
                     case "updateSARToCDetailByTxid":
                         obj = new JObject();
                         obj.Add("from", (string)req.@params[0]);
