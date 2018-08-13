@@ -1,7 +1,7 @@
 ﻿{
   "mongodbConnStr_testnet": "mongodb://172.31.173.134:27017",
   "mongodbDatabase_testnet": "testnet",
-  "neoCliJsonRPCUrl_testnet": "http://192.168.0.203:20332",
+  "neoCliJsonRPCUrl_testnet": "http://172.31.173.133:20332",
 
   "mongodbConnStr_mainnet": "mongodb://172.31.173.134:27017",
   "mongodbDatabase_mainnet": "mainnet",

@@ -584,7 +584,36 @@ namespace NEO_Block_API.Controllers
                         break;
                     //根据用户名获取所有代币名称
                     case "getnep55nameByaddr":
-                        //to do ...
+                        if (req.@params.Count() == 1) {
+                            addr = (string)req.@params[0];
+                            findFliter = "{to:'" + addr + "'}";
+                            sortStr = "{}";
+                            JArray transfers = mh.GetData(mongodbConnStr,mongodbDatabase, "transferSAR", findFliter);
+
+                            List<string> list = new List<string>();
+                            JObject nameResult = null;
+
+                            foreach (JObject tfJ in transfers)
+                            {
+                                list.Add((string)tfJ["name"]);
+                            }
+
+                            List<string> names = list.Distinct().ToList();
+                      
+                            string strs = "";
+                            if (names.Count > 0)
+                            {
+                                foreach (string name in names)
+                                {
+                                    strs = name + "," + strs;
+                                }
+                                strs = strs.Substring(0,strs.Length-1);
+                            }
+
+                            nameResult = new JObject();
+                            nameResult["name"] = strs;
+                            result = new JArray() { nameResult };
+                        }
                         break;
                     case "getsarOperatedByaddr":
                         if (req.@params.Count() == 4)
@@ -597,8 +626,8 @@ namespace NEO_Block_API.Controllers
                         }
                         else if (req.@params.Count() == 3)
                         {
-                            nep55_name = (string)req.@params[0];
-                            findFliter = "{name:'" + nep55_name + "'}";
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
                             sortStr = "{}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
                         }
@@ -606,6 +635,10 @@ namespace NEO_Block_API.Controllers
                         {
                             result = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedSAR", findFliter);
                         }
+                        break;
+                    case "getsarListByType":
+                            findFliter = "{type:" + int.Parse(req.@params[0].ToString()) + "}";
+                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedSAR", findFliter);
                         break;
                     case "getnep5count":
                         findFliter = "{}";
@@ -721,158 +754,158 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{txid:'" + req.@params[0] + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
                         break;
-                    case "saveSARToC":
-                        JObject obj =new  JObject();
-                        obj.Add("from", (string)req.@params[0]);
-                        txid = (string)req.@params[1];
-                        obj.Add("txid", txid);
-                        obj.Add("locked", Convert.ToDecimal(req.@params[2]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
-                        obj.Add("status", Convert.ToInt32(req.@params[4]));
+                    //case "saveSARToC":
+                    //    JObject obj =new  JObject();
+                    //    obj.Add("from", (string)req.@params[0]);
+                    //    txid = (string)req.@params[1];
+                    //    obj.Add("txid", txid);
+                    //    obj.Add("locked", Convert.ToDecimal(req.@params[2]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
+                    //    obj.Add("status", Convert.ToInt32(req.@params[4]));
 
-                        Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
+                    //    Boolean flag= mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
+                    //    break;
                     //case "deleteCDPTransferInfoByTxid":
                     //    flag = mh.deleteByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "CDPTransferInfo","txid", (string)req.@params[0]);
                     //    result = getJAbyKV("isSuccess", flag);
 
                     //    break;
-                    case "updateSARToC":
-                        obj = new JObject();
-                        obj.Add("from", (string)req.@params[0]);
-                        txid = (string)req.@params[1];
-                        obj.Add("locked", Convert.ToDecimal(req.@params[2]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
-                        obj.Add("status", Convert.ToInt32(req.@params[4]));
+                    //case "updateSARToC":
+                    //    obj = new JObject();
+                    //    obj.Add("from", (string)req.@params[0]);
+                    //    txid = (string)req.@params[1];
+                    //    obj.Add("locked", Convert.ToDecimal(req.@params[2]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[3]));
+                    //    obj.Add("status", Convert.ToInt32(req.@params[4]));
 
-                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
-                        break;
-                    case "findSARToCByTxid":
-                        findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
-                        break;
-                    case "findSARToCByFrom":
-                        findFliter = "{from:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
+                    //    flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferInfo", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
+                    //    break;
+                    //case "findSARToCByTxid":
+                    //    findFliter = "{txid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
+                    //    break;
+                    //case "findSARToCByFrom":
+                    //    findFliter = "{from:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
 
-                        break;
-                    case "findSARToCByStatus":
-                        findFliter = "{status:" + req.@params[0] + "}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
+                    //    break;
+                    //case "findSARToCByStatus":
+                    //    findFliter = "{status:" + req.@params[0] + "}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferInfo", findFliter);
 
-                        break;
-                    case "saveSARToCDetail":
-                        obj = new JObject();
-                        obj.Add("from", (string)req.@params[0]);
-                        obj.Add("sarTxid", (string)req.@params[1]);
-                        txid = (string)req.@params[2];
-                        obj.Add("txid", txid);
-                        obj.Add("operated", Convert.ToDecimal(req.@params[3]));
-                        obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("type", Convert.ToInt32(req.@params[6]));
+                    //    break;
+                    //case "saveSARToCDetail":
+                    //    obj = new JObject();
+                    //    obj.Add("from", (string)req.@params[0]);
+                    //    obj.Add("sarTxid", (string)req.@params[1]);
+                    //    txid = (string)req.@params[2];
+                    //    obj.Add("txid", txid);
+                    //    obj.Add("operated", Convert.ToDecimal(req.@params[3]));
+                    //    obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
+                    //    obj.Add("type", Convert.ToInt32(req.@params[6]));
 
-                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
+                    //    flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
+                    //    break;
                     
-                    case "updateSARToCDetailByTxid":
-                        obj = new JObject();
-                        obj.Add("from", (string)req.@params[0]);
-                        obj.Add("sarTxid", (string)req.@params[1]);
-                        txid = (string)req.@params[2];
-                        obj.Add("txid", txid);
-                        obj.Add("operated", Convert.ToDecimal(req.@params[3]));
-                        obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("type", Convert.ToInt32(req.@params[6]));
+                    //case "updateSARToCDetailByTxid":
+                    //    obj = new JObject();
+                    //    obj.Add("from", (string)req.@params[0]);
+                    //    obj.Add("sarTxid", (string)req.@params[1]);
+                    //    txid = (string)req.@params[2];
+                    //    obj.Add("txid", txid);
+                    //    obj.Add("operated", Convert.ToDecimal(req.@params[3]));
+                    //    obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
+                    //    obj.Add("type", Convert.ToInt32(req.@params[6]));
 
-                        flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
+                    //    flag = mh.updateDataByKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToCTransferDetail", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
-                    case "findSARToCDetailByTxid":
-                        findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToCDetailByTxid":
+                    //    findFliter = "{txid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
-                        break;
-                    case "findSARToCDetailBySARTxid":
-                        findFliter = "{sarTxid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToCDetailBySARTxid":
+                    //    findFliter = "{sarTxid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
-                        break;
-                    case "findSARToCDetailByFrom":
-                        findFliter = "{from:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToCDetailByFrom":
+                    //    findFliter = "{from:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToCTransferDetail", findFliter);
 
-                        break;
+                    //    break;
 
-                    //B端业务处理
-                    case "saveSARToB":
-                        obj = new JObject();
-                        obj.Add("name", (string)req.@params[0]);
-                        obj.Add("symbol", (string)req.@params[1]);
-                        obj.Add("decimals", Convert.ToInt32(req.@params[2]));
-                        obj.Add("owner", (string)req.@params[3]);
-                        txid = (string)req.@params[4];
-                        obj.Add("txid", txid);
-                        obj.Add("locked", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[6]));
-                        obj.Add("status", Convert.ToInt32(req.@params[7]));
+                    ////B端业务处理
+                    //case "saveSARToB":
+                    //    obj = new JObject();
+                    //    obj.Add("name", (string)req.@params[0]);
+                    //    obj.Add("symbol", (string)req.@params[1]);
+                    //    obj.Add("decimals", Convert.ToInt32(req.@params[2]));
+                    //    obj.Add("owner", (string)req.@params[3]);
+                    //    txid = (string)req.@params[4];
+                    //    obj.Add("txid", txid);
+                    //    obj.Add("locked", Convert.ToDecimal(req.@params[5]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[6]));
+                    //    obj.Add("status", Convert.ToInt32(req.@params[7]));
 
-                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToBTransferInfo", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
+                    //    flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToBTransferInfo", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
-                    case "findSARToBByTxid":
-                        findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
-                        break;
-                    case "findSARToBByOwner":
-                        findFliter = "{owner:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
+                    //    break;
+                    //case "findSARToBByTxid":
+                    //    findFliter = "{txid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
+                    //    break;
+                    //case "findSARToBByOwner":
+                    //    findFliter = "{owner:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
 
-                        break;
-                    case "findSARToBByStatus":
-                        findFliter = "{status:" + req.@params[0] + "}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
+                    //    break;
+                    //case "findSARToBByStatus":
+                    //    findFliter = "{status:" + req.@params[0] + "}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferInfo", findFliter);
 
-                        break;
+                    //    break;
 
-                    case "saveSARToBDetail":
-                        obj = new JObject();
-                        obj.Add("from", (string)req.@params[0]);
-                        obj.Add("sarTxid", (string)req.@params[1]);
-                        txid = (string)req.@params[2];
-                        obj.Add("txid", txid);
-                        obj.Add("operated", Convert.ToDecimal(req.@params[3]));
-                        obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
-                        obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
-                        obj.Add("type", Convert.ToInt32(req.@params[6]));
+                    //case "saveSARToBDetail":
+                    //    obj = new JObject();
+                    //    obj.Add("from", (string)req.@params[0]);
+                    //    obj.Add("sarTxid", (string)req.@params[1]);
+                    //    txid = (string)req.@params[2];
+                    //    obj.Add("txid", txid);
+                    //    obj.Add("operated", Convert.ToDecimal(req.@params[3]));
+                    //    obj.Add("hasLocked", Convert.ToDecimal(req.@params[4]));
+                    //    obj.Add("hasDrawed", Convert.ToDecimal(req.@params[5]));
+                    //    obj.Add("type", Convert.ToInt32(req.@params[6]));
 
-                        flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToBTransferDetail", obj, "txid", txid);
-                        result = getJAbyKV("isSuccess", flag);
+                    //    flag = mh.InsertOneDataByCheckKey(mh.mongodbConnStr_privatenet, mh.mongodbDatabase_privatenet, "SARToBTransferDetail", obj, "txid", txid);
+                    //    result = getJAbyKV("isSuccess", flag);
 
-                        break;
-                    case "findSARToBDetailByTxid":
-                        findFliter = "{txid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToBDetailByTxid":
+                    //    findFliter = "{txid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
 
-                        break;
-                    case "findSARToBDetailBySARTxid":
-                        findFliter = "{sarTxid:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToBDetailBySARTxid":
+                    //    findFliter = "{sarTxid:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
 
-                        break;
-                    case "findSARToBDetailByFrom":
-                        findFliter = "{from:'" + req.@params[0] + "'}";
-                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
+                    //    break;
+                    //case "findSARToBDetailByFrom":
+                    //    findFliter = "{from:'" + req.@params[0] + "'}";
+                    //    result = mh.GetData(mongodbConnStr, mongodbDatabase, "SARToBTransferDetail", findFliter);
 
-                        break;
+                    //    break;
                 }
                 if (result.Count == 0)
                 {
