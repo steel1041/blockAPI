@@ -650,9 +650,59 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedSAR", findFliter);
                         }
                         break;
+                    case "getsar4COperatedByaddr":
+                        if (req.@params.Count() == 4)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "',type:" + int.Parse(req.@params[1].ToString()) + "}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 3)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
+                    case "getOperated4CByaddr":
+                        if (req.@params.Count() == 4)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "',type:" + int.Parse(req.@params[1].ToString()) + "}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operated4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 3)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operated4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operated4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
                     case "getsarListByType":
                             findFliter = "{type:" + int.Parse(req.@params[0].ToString()) + "}";
-                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedSAR", findFliter);
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        break;
+                    case "getsar4CListByType":
+                        findFliter = "{type:" + int.Parse(req.@params[0].ToString()) + "}";
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
                         break;
                     case "getnep5count":
                         findFliter = "{}";
