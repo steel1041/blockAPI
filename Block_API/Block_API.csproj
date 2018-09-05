@@ -28,6 +28,6 @@
     </Reference>
   </ItemGroup>
 
-  <ProjectExtensions><VisualStudio><UserProperties mongodbsettings_1json__JSONSchema="http://json.schemastore.org/ansible-stable-2.5" /></VisualStudio></ProjectExtensions>
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
