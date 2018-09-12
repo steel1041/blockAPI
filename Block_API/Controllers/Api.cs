@@ -88,8 +88,7 @@ namespace NEO_Block_API.Controllers
                         result = mh.Getdatablockheight(mongodbConnStr, mongodbDatabase);
                         break;
                     case "getblockcount":
-                        //resultStr = "[{blockcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "block") + "}]";
-                        result = getJAbyKV("blockcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "block"));
+                        result = getJAbyKV("blockcount", (long)(mh.GetData(mongodbConnStr, mongodbDatabase, "system_counter", "{counter:'block'}")[0]["lastBlockindex"]) + 1);
                         break;
                     case "getsar4ccount":
                         findFliter = "{}";
