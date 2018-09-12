@@ -544,6 +544,77 @@ namespace NEO_Block_API.Controllers
                         }                   
 
                         break;
+                    case "getallnep55assetofaddress":
+                        string NEP55addr = (string)req.@params[0];
+                        string NEP55asset = (string)req.@params[1];
+                          isNeedBalance = false;
+                        if (req.@params.Count() > 2)
+                        {
+                            isNeedBalance = ((Int64)req.@params[2] == 1) ? true : false;
+                        }
+
+                        //按资产汇集收到的钱(按照name)
+                         findTransferTo = "{ to:'" + NEP55addr + "',asset:'"+ NEP55asset + "'}";
+                        JArray transferSARToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "transferSAR", findTransferTo);
+                        List<NEP55.Transfer55> tfts55 = new List<NEP55.Transfer55>();
+                        foreach (JObject tfJ in transferSARToJA)
+                        {
+                            tfts55.Add(new NEP55.Transfer55(tfJ));
+                        }
+                        var queryTo55 = from tft in tfts55
+                                      group tft by tft.name into tftG
+                                      select new { name = tftG.Key };
+                        var nameAdds = queryTo55.ToList();
+
+                        //如果需要余额，则通过cli RPC批量获取余额
+                        List<NEP55.AssetBalanceOfAddr> AssetBalances = new List<NEP55.AssetBalanceOfAddr>();
+                        if (isNeedBalance)
+                        {
+                            List<NEP55.AssetBalanceOfAddr> addrAssetBalancesTemp = new List<NEP55.AssetBalanceOfAddr>();
+                            foreach (var nameAdd in nameAdds)
+                            {
+                                addrAssetBalancesTemp.Add(new NEP55.AssetBalanceOfAddr(NEP55asset, nameAdd.name, nameAdd.name, string.Empty));
+                            }
+
+                            List<string> nep55Contract = new List<string>();
+                            JArray queryParams = new JArray();
+                            byte[] NEP5allAssetOfAddrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP55addr);
+                            string NEP5allAssetOfAddrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5allAssetOfAddrHash.Reverse().ToArray());
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                nep55Contract.Add(NEP55asset);
+                                queryParams.Add(JArray.Parse("['(str)balanceOf',['(str)" + abt.name +"','(hex)"+ NEP5allAssetOfAddrHashHex + "']]"));
+                            }
+                            JArray NEP55allAssetBalanceJA = (JArray)ct.callContractForTest(neoCliJsonRPCUrl, nep55Contract, queryParams)["stack"];
+                            var a = Newtonsoft.Json.JsonConvert.SerializeObject(NEP55allAssetBalanceJA);
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                string allBalanceStr = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["value"];
+                                string allBalanceType = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["type"];
+
+                                abt.balance = NEP5.getNumStrFromStr(allBalanceType, allBalanceStr, 8);
+                            }
+
+                            //去除余额为0的资产
+                            foreach (var abt in addrAssetBalancesTemp)
+                            {
+                                if (abt.balance != string.Empty && abt.balance != "0")
+                                {
+                                    AssetBalances.Add(abt);
+                                }
+                            }
+                        }
+
+                        if (!isNeedBalance)
+                        {
+                            result = JArray.FromObject(nameAdds);
+                        }
+                        else
+                        {
+                            result = JArray.FromObject(AssetBalances);
+                        }
+
+                        break;
                     case "getnep5asset":
                         findFliter = "{assetid:'" + ((string)req.@params[0]).formatHexStr() + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5asset", findFliter);
