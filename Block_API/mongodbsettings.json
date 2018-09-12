@@ -7,9 +7,9 @@
   "mongodbDatabase_mainnet": "mainnet",
   "neoCliJsonRPCUrl_mainnet": "http://172.31.173.135:10332",
 
-  "mongodbConnStr_privatenet": "mongodb://192.168.0.209:27017",
+  "mongodbConnStr_privatenet": "mongodb://127.0.0.1:27017",
   "mongodbDatabase_privatenet": "privatenet",
-  "neoCliJsonRPCUrl_privatenet": "http://192.168.0.105:10332",
+  "neoCliJsonRPCUrl_privatenet": "http://47.52.188.214:10332",
 
   "mongodbConnStr_NeonOnline": "mongodb://192.168.0.209:27017",
   "mongodbDatabase_NeonOnline": "neononline"

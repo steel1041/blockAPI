@@ -92,8 +92,27 @@ namespace NEO_Block_API.Controllers
                         result = getJAbyKV("blockcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "block"));
                         break;
                     case "getsar4ccount":
-                        //resultStr = "[{blockcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "block") + "}]";
-                        result = getJAbyKV("sar4ccount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4C"));
+                        findFliter = "{}";
+                        if (req.@params.Count() > 0)
+                        {
+                            string status = req.@params[0].ToString();                     
+                            findFliter = "{status:" + status + "}";
+                        }
+                        result = getJAbyKV("sar4ccount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter));
+                        break;
+                    case "getsar4bcount":
+                        findFliter = "{}";
+                        if (req.@params.Count() > 0)
+                        {
+                            string status = req.@params[0].ToString();
+                            findFliter = "{status:" + status + "}";
+                        }
+                        result = getJAbyKV("sar4bcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter));
+                        break;
+                    case "getnep5transferbyaddresscount":
+                        string NEP5transferAddress = (string)req.@params[0];
+                        findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]}";
+                        result = getJAbyKV("transfercount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter));
                         break;
                     case "getcliblockcount":
                         var resp = hh.Post(neoCliJsonRPCUrl, "{'jsonrpc':'2.0','method':'getblockcount','params':[],'id':1}", System.Text.Encoding.UTF8, 1);
@@ -541,7 +560,7 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getnep5transferbyaddress":
                         sortStr = "{'blockindex':-1}";
-                        string NEP5transferAddress = (string)req.@params[0];
+                        NEP5transferAddress = (string)req.@params[0];
                         findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'"+ NEP5transferAddress + "'}]}";
 
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()),findFliter);
@@ -695,14 +714,14 @@ namespace NEO_Block_API.Controllers
                         if (req.@params.Count() == 4)
                         {
                             addr = (string)req.@params[0];
-                            findFliter = "{addr:'" + addr + "',type:" + int.Parse(req.@params[1].ToString()) + "}";
+                            findFliter = "{addr:'" + addr + "',type:" + int.Parse(req.@params[1].ToString()) + ",status:1}";
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operated4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
                         else if (req.@params.Count() == 3)
                         {
                             addr = (string)req.@params[0];
-                            findFliter = "{addr:'" + addr + "'}";
+                            findFliter = "{addr:'" + addr + "',status:1}";
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operated4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
                         }
@@ -718,10 +737,36 @@ namespace NEO_Block_API.Controllers
                         sortStr = "{'blockindex':-1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
                         break;
+                    case "getsar4BListByType":
+                        findFliter = "{}";
+                        sortStr = "{'blockindex':-1}";
+
+                        if (req.@params.Count() > 0)
+                        {
+                            string status = req.@params[0].ToString();
+
+                            findFliter = "{status:" + status + "}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
                     case "getsar4CListByType":
                         findFliter = "{}";
                         sortStr = "{'blockindex':-1}";
-                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+
+                        if (req.@params.Count() > 0)
+                        {
+                            string status = req.@params[0].ToString();
+
+                            findFliter = "{status:" + status + "}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else {
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
                         break;
                     case "getnep5count":
                         findFliter = "{}";
