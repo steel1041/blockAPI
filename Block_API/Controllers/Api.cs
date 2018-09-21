@@ -92,11 +92,16 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getsar4ccount":
                         findFliter = "{}";
-                        if (req.@params.Count() > 0)
+                        if (req.@params.Count() == 1)
                         {
-                            string status = req.@params[0].ToString();                     
+                            string status = req.@params[0].ToString();
                             findFliter = "{status:" + status + "}";
+                        }else if (req.@params.Count() == 2) {
+                            string status = req.@params[0].ToString();
+                            string assetId = req.@params[1].ToString();
+                            findFliter = "{status:" + status +",asset:'"+assetId+ "'}";
                         }
+
                         result = getJAbyKV("sar4ccount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter));
                         break;
                     case "getsar4bcount":
@@ -827,12 +832,20 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{}";
                         sortStr = "{'blockindex':-1}";
 
-                        if (req.@params.Count() > 0)
+                        if (req.@params.Count() == 3)
                         {
                             string status = req.@params[0].ToString();
 
                             findFliter = "{status:" + status + "}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            string status = req.@params[0].ToString();
+                            string assetId = req.@params[1].ToString();
+
+                            findFliter = "{status:" + status + ",asset:'"+assetId+"'}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
                         else {
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
