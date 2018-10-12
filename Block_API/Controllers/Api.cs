@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace NEO_Block_API.Controllers
 {
@@ -83,6 +84,14 @@ namespace NEO_Block_API.Controllers
                             }
                         };
                         result = JA;
+                        break;
+                    case "getcliversion":
+                        result = getJAbyKV("cliversion", (string)JObject.Parse(hh.Post(neoCliJsonRPCUrl, "{'jsonrpc':'2.0','method':'getversion','params':[],'id':1}", System.Text.Encoding.UTF8, 1))["result"]["useragent"]);
+                        break;
+                    case "getclirawmempool":
+                        JObject rawmempoolJ = new JObject();
+                        rawmempoolJ.Add("clirawmempool", JObject.Parse(hh.Post(neoCliJsonRPCUrl, "{'jsonrpc':'2.0','method':'getrawmempool','params':[],'id':1}", System.Text.Encoding.UTF8, 1))["result"]);
+                        result = getJAbyJ(rawmempoolJ);
                         break;
                     case "getdatablockheight":
                         result = mh.Getdatablockheight(mongodbConnStr, mongodbDatabase);
@@ -242,7 +251,7 @@ namespace NEO_Block_API.Controllers
                     case "getutxostopay":
                         string address = (string)req.@params[0];
                         string assetID = ((string)req.@params[1]).formatHexStr();
-                        decimal amount = decimal.Parse(req.@params[2].ToString());
+                        decimal amount = decimal.Parse(req.@params[2].ToString(),NumberStyles.Float);
                         bool isBigFirst = false; //默认先用小的。
 
                         if (req.@params.Count() == 4)
@@ -275,8 +284,16 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getclaimtxhex":
                         string addrClaim = (string)req.@params[0];
+                        JObject claimgasJ = claim.getClaimGas(mongodbConnStr, mongodbDatabase, addrClaim);
+                        if (claimgasJ["errorCode"] != null)
+                        {
+                            result = getJAbyJ(claimgasJ);
+                        }
+                        else
+                        {
+                            result = getJAbyKV("claimtxhex", tx.getClaimTxHex(addrClaim, claimgasJ));
+                        }
 
-                        result = getJAbyKV("claimtxhex", tx.getClaimTxHex(addrClaim, claim.getClaimGas(mongodbConnStr, mongodbDatabase, addrClaim)));
                         break;
                     case "getbalance":
                         findFliter = "{addr:'" + req.@params[0] + "',used:''}";
@@ -315,7 +332,7 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{addr:'" + addrOut + "',used:''}";
                         JArray outputJA = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
 
-                        result = getJAbyKV("transfertxhex", tx.getTransferTxHex(outputJA, (string)req.@params[0], (string)req.@params[1], (string)req.@params[2], decimal.Parse(req.@params[3].ToString())));
+                        result = getJAbyKV("transfertxhex", tx.getTransferTxHex(outputJA, (string)req.@params[0], (string)req.@params[1], (string)req.@params[2], decimal.Parse(req.@params[3].ToString(),NumberStyles.Float)));
 
                         //result = new JArray
                         //{
@@ -372,7 +389,7 @@ namespace NEO_Block_API.Controllers
                         JArray outputJAPayFee = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
 
                         string invokeScript = (string)req.@params[1];
-                        decimal invokeScriptFee = decimal.Parse(req.@params[2].ToString());
+                        decimal invokeScriptFee = decimal.Parse(req.@params[2].ToString(),NumberStyles.Float);
 
                         result = getJAbyKV("invoketxhex", tx.getInvokeTxHex(outputJAPayFee, addrPayFee, invokeScript, invokeScriptFee));
                         break;
@@ -995,6 +1012,11 @@ namespace NEO_Block_API.Controllers
                         }
                         break;
 
+                }
+                if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
+                {
+                    JsonPRCresponse_Error resE = new JsonPRCresponse_Error(req.id, (int)result[0]["errorCode"], (string)result[0]["errorMsg"], (string)result[0]["errorData"]);
+                    return resE;
                 }
                 if (result.Count == 0)
                 {
