@@ -711,6 +711,14 @@ namespace NEO_Block_API.Controllers
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "transferSAR", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
     
                         break;
+                    case "getSAR4BByName":
+                        string nep55_asset = (string)req.@params[0];
+                        nep55_name = (string)req.@params[1];
+                        findFliter = "{asset:'"+ nep55_asset + "',name:'"+nep55_name+"',status:1}";
+                        sortStr ="{}";
+                        result = mh.GetData(mongodbConnStr,mongodbDatabase,"SAR4B",findFliter);
+
+                        break;
                     //根据用户名获取所有代币名称
                     case "getnep55nameByaddr":
                         if (req.@params.Count() == 1) {
@@ -747,9 +755,9 @@ namespace NEO_Block_API.Controllers
                     case "getsarOperatedByaddr":
                         if (req.@params.Count() == 4)
                         {
-                            nep55_name = (string)req.@params[0];
+                            string sarTxid = (string)req.@params[0];
                             addr = (string)req.@params[1];
-                            findFliter = "{name:'" + nep55_name + "',addr:'" + addr + "'}";
+                            findFliter = "{sarTxid:'" + sarTxid + "',addr:'" + addr + "'}";
                             sortStr = "{}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
