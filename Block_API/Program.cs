@@ -20,7 +20,7 @@ namespace NEO_Block_API
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
-                .UseUrls("http://*:59908")
+                .UseUrls("http://*:8080")
                 .Build();
     }
 }

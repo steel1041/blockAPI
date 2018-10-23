@@ -876,6 +876,32 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
+                    case "getOracleOperated":
+                        if (req.@params.Count() == 5)
+                        {
+                            assetID = (string)req.@params[0];
+                            addr = (string)req.@params[1];
+
+                            findFliter = "{asset:'" + assetID +"',addr:'"+ addr+"',type:" + int.Parse(req.@params[2].ToString()) + "}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedOracle", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            assetID = (string)req.@params[0];
+                            addr = (string)req.@params[1];
+
+                            findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedOracle", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedOracle", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
                     case "getnep5count":
                         findFliter = "{}";
                         if (req.@params.Count() == 2)
