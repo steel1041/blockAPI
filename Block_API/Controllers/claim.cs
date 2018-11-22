@@ -62,12 +62,37 @@ namespace NEO_Block_API.Controllers
 
                 J.Add("gas", issueGas);
                 J.Add("claims", gasIssueJA);
+                J.Add("count", utxoCount);
             }
             else
             {
-                J.Add("errorCode", "-10");
-                J.Add("errorMsg", "The data is too large to process");
-                J.Add("errorData", "ClaimGas UTXO Threshold is " + UTXOThreshold);
+                //大于50条记录就取50条记录进行操作
+                JArray gasIssueJA = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "utxo","{}",50,1,findFliter);
+
+                foreach (JObject utxo in gasIssueJA)
+                {
+                    int start = (int)utxo["createHeight"];
+                    int end = -1;
+                    if (isGetUsed)
+                    {
+                        end = (int)utxo["useHeight"] - 1; //转出的这块的gas属于转入地址
+                    }
+                    else
+                    {
+                        //未花费以目前高度计算
+                        end = (int)mh.Getdatablockheight(mongodbConnStr, mongodbDatabase).First()["blockDataHeight"];
+                    }
+                    int value = (int)utxo["value"];
+
+                    decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start);
+                    decimal issueGasInBlock = countGas(start, end);
+
+                    issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
+                }
+
+                J.Add("gas", issueGas);
+                J.Add("claims", gasIssueJA);
+                J.Add("count", utxoCount);
             }
 
             return J;

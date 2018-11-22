@@ -41,6 +41,11 @@ namespace NEO_Block_API.Controllers
                     mongodbDatabase = mh.mongodbDatabase_privatenet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_privatenet;
                     break;
+                case "swnet":
+                    mongodbConnStr = mh.mongodbConnStr_swnet;
+                    mongodbDatabase = mh.mongodbDatabase_swnet;
+                    neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_swnet;
+                    break;
             }
         }
 
@@ -122,11 +127,7 @@ namespace NEO_Block_API.Controllers
                         }
                         result = getJAbyKV("sar4bcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter));
                         break;
-                    case "getnep5transferbyaddresscount":
-                        string NEP5transferAddress = (string)req.@params[0];
-                        findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]}";
-                        result = getJAbyKV("transfercount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter));
-                        break;
+                   
                     case "getcliblockcount":
                         var resp = hh.Post(neoCliJsonRPCUrl, "{'jsonrpc':'2.0','method':'getblockcount','params':[],'id':1}", System.Text.Encoding.UTF8, 1);
 
@@ -650,14 +651,40 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{txid:'" + txid + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
                         break;
+                    case "getnep5transferbyaddresscount":
+                        findFliter = "{}";
+                        string NEP5transferAddress = string.Empty;
+                        if (req.@params.Count() == 1)
+                        {
+                            NEP5transferAddress = (string)req.@params[0];
+                            findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]}";
+                        }
+                        else if (req.@params.Count() == 2)
+                        {
+                            NEP5transferAddress = (string)req.@params[0];
+                            string asset = (string)req.@params[1];
+                            findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]," + "asset:'" + asset + "'}";
+                        }
+                        result = getJAbyKV("transfercount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter));
+                        break;
                     case "getnep5transferbyaddress":
                         sortStr = "{'blockindex':-1}";
-                        NEP5transferAddress = (string)req.@params[0];
-                        findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'"+ NEP5transferAddress + "'}]}";
-
-                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()),findFliter);
+                        findFliter = "{}";
+                        if (req.@params.Count() == 3)
+                        {
+                            NEP5transferAddress = (string)req.@params[0];
+                            findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            NEP5transferAddress = (string)req.@params[0];
+                            string asset = (string)req.@params[1];
+                            findFliter = "{$or:[{'from':'" + NEP5transferAddress + "'},{'to':'" + NEP5transferAddress + "'}]," + "asset:'" + asset + "'}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "NEP5transfer", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
                         break;
-                    case "getnep5transferbyaddress2":
+                    case "getnep5transferbyaddressSimple":
                         sortStr = "{'blockindex':1,'txid':1,'n':1}";
                         NEP5transferAddress = (string)req.@params[0];
                         string NEP5transferAddressType = (string)req.@params[1];
@@ -703,6 +730,12 @@ namespace NEO_Block_API.Controllers
                         }
                         else
                             result = mh.GetData(mongodbConnStr, mongodbDatabase, "transferSAR", findFliter);
+                        break;
+                    case "getnep55transfersbyaddresscount":
+                        addr = (string)req.@params[0];
+                        findFliter = "{$or:[{'from':'" + addr + "'},{'to':'" + addr + "'}]}";
+
+                        result = getJAbyKV("transfercount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "transferSAR", findFliter));
                         break;
                     case "getnep55transfersbyaddress":
                         addr = (string)req.@params[0];
@@ -1029,6 +1062,17 @@ namespace NEO_Block_API.Controllers
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "tx", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
+                        break;
+                    case "getTransByAddresscount":
+                        if (req.@params.Count() == 1)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                        }
+                        else {
+                            findFliter = "{}";
+                        }
+                        result = getJAbyKV("transcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "address_tx", findFliter));
                         break;
                     case "getTransByAddress":
                         if (req.@params.Count() == 3)
