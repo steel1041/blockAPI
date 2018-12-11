@@ -11,9 +11,13 @@
   "mongodbDatabase_privatenet": "privatenet",
   "neoCliJsonRPCUrl_privatenet": "http://47.52.188.214:10332",
 
+  "mongodbConnStr_pri": "mongodb://127.0.0.1:27017",
+  "mongodbDatabase_pri": "pri",
+  "neoCliJsonRPCUrl_pri": "http://47.52.188.214:10332",
+
   "mongodbConnStr_swnet": "mongodb://127.0.0.1:27017",
   "mongodbDatabase_swnet": "swnet",
-  "neoCliJsonRPCUrl_swnet": "http://47.52.188.214:10332",
+  "neoCliJsonRPCUrl_swnet": "http://127.0.0.1:10332",
 
   "mongodbConnStr_NeonOnline": "mongodb://192.168.0.209:27017",
   "mongodbDatabase_NeonOnline": "neononline"

@@ -46,6 +46,11 @@ namespace NEO_Block_API.Controllers
                     mongodbDatabase = mh.mongodbDatabase_swnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_swnet;
                     break;
+                case "pri":
+                    mongodbConnStr = mh.mongodbConnStr_pri;
+                    mongodbDatabase = mh.mongodbDatabase_pri;
+                    neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_pri;
+                    break;
             }
         }
 
@@ -110,6 +115,11 @@ namespace NEO_Block_API.Controllers
 
                         string cliResultStr = (string)JObject.Parse(resp)["result"];
                         result = getJAbyKV("cliblockcount", cliResultStr);
+                        break;
+
+                    case "claimContract":
+
+                        claim.claimContract(mongodbConnStr,mongodbDatabase, "AQbg4gk1Q6FaGCtfEKu2ETSMP6U25YDVR3", "AZ77FiX7i9mRUPF2RyuJD2L8kS6UDnQ9Y7", neoCliJsonRPCUrl, "0xce7b4dd09b23530baa8d5c9f5e8423eb2dc5476e");
                         break;
                     case "gettxcount":
                         //resultStr = "[{txcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx") + "}]";
@@ -258,6 +268,14 @@ namespace NEO_Block_API.Controllers
                                 claimsJ = claim.getClaimGas(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), false);
                             }
                         }
+                        result = getJAbyJ(claimsJ);
+                        break;
+                    case "getClaimGasByTx":
+                        claimsJ = new JObject();
+                        if (req.@params.Count() == 1)
+                        {
+                            claimsJ = claim.getClaimGasByTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString());
+                        };
                         result = getJAbyJ(claimsJ);
                         break;
                     case "getclaimtxhex":
