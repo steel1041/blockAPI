@@ -13,7 +13,7 @@ namespace NEO_Block_API.Controllers
 {
     //[RpcRoute("api/[controller]")]
     [Route("api/[controller]")]
-    public class PrivateController : Controller
+    public class PriController : Controller
     {
         Api api = new Api("pri");
 

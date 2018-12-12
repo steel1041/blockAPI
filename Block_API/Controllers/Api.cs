@@ -950,7 +950,7 @@ namespace NEO_Block_API.Controllers
                             assetID = (string)req.@params[0];
                             addr = (string)req.@params[1];
 
-                            findFliter = "{asset:'" + assetID +"',addr:'"+ addr+"',type:" + int.Parse(req.@params[2].ToString()) + "}";
+                            findFliter = "{asset:'" + assetID +"',addr:'"+ addr+"',key:'" + req.@params[2].ToString() + "'}";
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedOracle", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
                         }
@@ -1124,7 +1124,55 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "address_tx", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
-
+                    case "getOperatedFeeByAddrCount":
+                        if (req.@params.Count() == 1)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                        }
+                        result = getJAbyKV("operatedcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "operatedFee", findFliter));
+                        break;
+                    case "getOperatedFeeByAddr":
+                        if (req.@params.Count() == 3)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else {
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
+                    case "getOperatedFeeBySARCount":
+                        if (req.@params.Count() == 1)
+                        {
+                            string sarTxid = (string)req.@params[0];
+                            findFliter = "{sarTxid:'" + sarTxid + "'}";
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                        }
+                        result = getJAbyKV("operatedcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "operatedFee", findFliter));
+                        break;
+                    case "getOperatedFeeBySAR":
+                        if (req.@params.Count() == 3)
+                        {
+                            string sarTxid = (string)req.@params[0];
+                            findFliter = "{sarTxid:'" + sarTxid + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
