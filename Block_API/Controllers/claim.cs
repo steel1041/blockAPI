@@ -58,7 +58,7 @@ namespace NEO_Block_API.Controllers
                     }
                     int value = (int)utxo["value"];
 
-                    decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start);
+                    decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start - 1);
                     decimal issueGasInBlock = countGas(start, end);
 
                     issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
@@ -88,7 +88,7 @@ namespace NEO_Block_API.Controllers
                     }
                     int value = (int)utxo["value"];
 
-                    decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start);
+                    decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start - 1);
                     decimal issueGasInBlock = countGas(start, end);
 
                     issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
@@ -131,7 +131,9 @@ namespace NEO_Block_API.Controllers
                 }
                 int value = (int)utxo["value"];
 
-                decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start);
+                //转入的这个块，属于当前地址，由于差额计算方法，需要开始-1
+                decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start - 1);
+
                 decimal issueGasInBlock = countGas(start, end);
 
                 issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
