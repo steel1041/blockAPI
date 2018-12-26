@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NEO_Block_API.lib;
+using System.IO;
+using Block_API.Controllers;
+using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace NEO_Block_API.Controllers
 {
@@ -102,11 +106,11 @@ namespace NEO_Block_API.Controllers
             return J;
         }
 
-        public JObject getClaimGasByTx(string mongodbConnStr, string mongodbDatabase, string txid)
+        public JObject getClaimGasByTx(string mongodbConnStr, string mongodbDatabase, string txid,int n)
         {
             decimal issueGas = 0;
 
-            string findFliter = "{txid:'" + txid + "','asset':'0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b'}";
+            string findFliter = "{txid:'" + txid +"',n:"+ n + ",'asset':'0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b'}";
 
             JObject J = new JObject();
 
@@ -181,7 +185,7 @@ namespace NEO_Block_API.Controllers
             return gasCount;
         }
 
-        public void claimContract(string mongodbConnStr, string mongodbDatabase, string conAddr, string addrClaim, string url, string hash)
+        public JObject claimContract2(string mongodbConnStr, string mongodbDatabase, string conAddr, string addrClaim, string url, string hash)
         {
             JObject claimGas = getClaimGas(mongodbConnStr, mongodbDatabase, conAddr, true);
 
@@ -243,6 +247,158 @@ namespace NEO_Block_API.Controllers
                 Console.WriteLine("errorMessage：" + (string)result["errorMessage"]);
 
             }
+            return result;
+        }
+
+        public JObject claimContract(string mongodbConnStr, string mongodbDatabase, string conAddr, string addrClaim, string url, string hash)
+        {
+            JObject claimGas = getClaimGas(mongodbConnStr, mongodbDatabase, conAddr, true);
+
+            string unsignHexTx = tx.getClaimTxHex(addrClaim,claimGas);
+
+            byte[] txScript = unsignHexTx.HexString2Bytes();
+
+            ThinNeo.Transaction claimTran = new ThinNeo.Transaction();
+            claimTran.Deserialize(new MemoryStream(txScript));
+
+            JObject contract = ct.getContractState(url, hash);
+            //做智能合约的签名
+            byte[] iscript = null;
+            using (var sb = new ThinNeo.ScriptBuilder())
+            {
+                sb.EmitPushString("whatever");
+                sb.EmitPushNumber(250);
+                iscript = sb.ToArray();
+            }
+            byte[] conbytes = ThinNeo.Debug.DebugTool.HexString2Bytes((string)contract["script"]);
+            claimTran.AddWitnessScript(conbytes, iscript);
+
+            var trandata = claimTran.GetRawData();
+            var strtrandata = ThinNeo.Helper.Bytes2HexString(trandata);
+
+            JObject result = tx.sendrawtransaction(url, strtrandata);
+            bool re = (bool)result["sendrawtransactionresult"];
+            Console.WriteLine("得到的结果是：" + re);
+            if (re)
+            {
+                Console.WriteLine("txid：" + (string)result["txid"]);
+                try
+                {
+                    //处理提取后的utxo,记录每笔utxo原始账户信息
+                    proClaimData(mongodbConnStr, mongodbDatabase, claimGas);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+            else
+            {
+                Console.WriteLine("errorMessage：" + (string)result["errorMessage"]);
+
+            }
+            return result;
+        }
+
+        private void proClaimData(string mongodbConnStr, string mongodbDatabase,JObject claimGas)
+        {
+            List<ThinNeo.TransactionInput> claimVins = new List<ThinNeo.TransactionInput>();
+            foreach (JObject j in (JArray)claimGas["claims"])
+            {
+                string txid = (string)j["txid"];
+                ushort index = (ushort)j["n"];
+                try
+                {
+                    Console.WriteLine("txid:"+txid+"/n:"+index);
+                    processSigleTx(mongodbConnStr, mongodbDatabase, txid, index);
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+        }
+
+
+        public JObject processSigleTx(string mongodbConnStr, string mongodbDatabase, string txid,int n)
+        {
+            decimal issueGas = 0;
+            string findFliter = "{txid:'" + txid + "',n:" + n + ",'asset':'0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b'}";
+            JArray gasIssueJA = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
+            JObject utxo = (JObject)gasIssueJA[0];
+        
+            JObject gas = new JObject();
+            string used = (string)utxo["used"];
+            int start = (int)utxo["createHeight"];
+            int end = -1;
+            if (used.Length > 0)
+            {
+                end = (int)utxo["useHeight"] - 1; //转出的这块的gas属于转入地址
+            }
+            else
+            {
+                //未花费以目前高度计算
+                end = (int)mh.Getdatablockheight(mongodbConnStr, mongodbDatabase).First()["blockDataHeight"];
+            }
+            int value = (int)utxo["value"];
+
+            //转入的这个块，属于当前地址，由于差额计算方法，需要开始-1
+            decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start - 1);
+
+            decimal issueGasInBlock = countGas(start, end);
+
+            issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
+
+            ushort index = (ushort)utxo["n"];
+            string usedTxid = (string)utxo["used"];
+
+            gas.Add("addr", (string)utxo["addr"]);
+            gas.Add("txid", txid);
+            gas.Add("n", index);
+            gas.Add("gas", issueGas);
+
+            string formatGas = DecimalToString(issueGas);
+
+            Console.WriteLine("gas:"+issueGas+"/format gas:"+ formatGas);
+
+            //根据usedTxid查询原始转入地址
+            //db.tx.find({"vin.0.txid":{$eq:"0x24b6752cd46aefdf036a86b8e05af7e024d15846e728d24e4a10c9e9ebf09927"}})
+            findFliter = "{'vin.0.txid':{$eq:'" + usedTxid + "'}}";
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+            if (result.Count > 0)
+            {
+                JObject txOb = (JObject)result[0];
+                JArray vouts = (JArray)txOb["vout"];
+                if (vouts.Count > 0)
+                {
+                    JObject voutOb = (JObject)vouts[0];
+                    string claimAddr = (string)voutOb["address"];
+                    int v = (int)voutOb["value"];
+
+                    findFliter = "{txid:'" + txid+"',n:" + n + "}";
+                    JArray array =  mh.GetData(mongodbConnStr, mongodbDatabase, "ProClaimgas", findFliter);
+                    if (array.Count > 0)
+                    {
+                        return gas;
+                    }
+                    else
+                    {
+                        var client = new MongoClient(mongodbConnStr);
+                        var database = client.GetDatabase(mongodbDatabase);
+                        ProClaimgas pro = new ProClaimgas(claimAddr,txid, index, usedTxid, v, formatGas, 1, DateTime.Now, DateTime.Now);
+                        var collectionPro = database.GetCollection<ProClaimgas>("ProClaimgas");
+                        collectionPro.InsertOne(pro);
+                    }
+
+                }
+            }
+            return gas;
+
+        }
+
+        private string DecimalToString(decimal d)
+        {
+            return d.ToString("#0.########");
         }
     }
 }

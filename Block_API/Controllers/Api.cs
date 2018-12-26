@@ -118,8 +118,19 @@ namespace NEO_Block_API.Controllers
                         break;
 
                     case "claimContract":
-
-                        claim.claimContract(mongodbConnStr,mongodbDatabase, "AQbg4gk1Q6FaGCtfEKu2ETSMP6U25YDVR3", "AZ77FiX7i9mRUPF2RyuJD2L8kS6UDnQ9Y7", neoCliJsonRPCUrl, "0xce7b4dd09b23530baa8d5c9f5e8423eb2dc5476e");
+                        if (req.@params.Count() > 0)
+                        {
+                            string contractAddr = req.@params[0].ToString();
+                            string claimAddr = req.@params[1].ToString();
+                            string sarHash = req.@params[2].ToString();
+                            result = getJAbyJ(claim.claimContract(mongodbConnStr, mongodbDatabase, contractAddr, claimAddr, neoCliJsonRPCUrl, sarHash));
+                        }
+                        break;
+                    case "processSigleTx":
+                        if (req.@params.Count() > 0)
+                        {
+                            result = getJAbyJ(claim.processSigleTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), int.Parse(req.@params[1].ToString())));
+                        }
                         break;
                     case "gettxcount":
                         //resultStr = "[{txcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx") + "}]";
@@ -272,9 +283,9 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getClaimGasByTx":
                         claimsJ = new JObject();
-                        if (req.@params.Count() == 1)
+                        if (req.@params.Count() == 2)
                         {
-                            claimsJ = claim.getClaimGasByTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString());
+                            claimsJ = claim.getClaimGasByTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(),int.Parse(req.@params[1].ToString()));
                         };
                         result = getJAbyJ(claimsJ);
                         break;
@@ -883,7 +894,7 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getsar4BListByType":
                         findFliter = "{}";
-                        sortStr = "{'blockindex':-1}";
+                        sortStr = "{'blockindex':1}";
 
                         if (req.@params.Count() == 3)
                         {
@@ -923,7 +934,7 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getsar4CListByType":
                         findFliter = "{}";
-                        sortStr = "{'blockindex':-1}";
+                        sortStr = "{'blockindex':1}";
 
                         if (req.@params.Count() == 3)
                         {

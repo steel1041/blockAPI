@@ -295,5 +295,25 @@ namespace NEO_Block_API.lib
             client = null;
             return flag;
         }
+
+        public void insertOne(string mongodbConnStr, string mongodbDatabase, string collName, JObject J, bool isAsyn = false)
+        {
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collection = database.GetCollection<BsonDocument>(collName);
+
+            var document = BsonDocument.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(J));
+
+            if (isAsyn)
+            {
+                collection.InsertOneAsync(document);
+            }
+            else
+            {
+                collection.InsertOne(document);
+            }
+
+            client = null;
+        }
     }
 }
