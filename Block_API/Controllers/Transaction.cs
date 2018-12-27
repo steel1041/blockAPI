@@ -11,6 +11,7 @@ namespace NEO_Block_API.Controllers
 {
     public class Transaction
     {
+
         public JArray getUtxo2Pay(JArray utxoJA,string address,string assetID, decimal amount,bool isBigFirst = false)
         {
             IOrderedEnumerable<JToken> query;
@@ -142,6 +143,8 @@ namespace NEO_Block_API.Controllers
                 return ms.ToArray().ToHexString();
             }
         }
+
+       
 
         public string getClaimTxHex(string addrClaim,JObject claimGas)
         {

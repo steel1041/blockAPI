@@ -9,7 +9,7 @@ namespace Block_API.Controllers
     [BsonIgnoreExtraElements]
     class ProClaimgas
     {
-        public ProClaimgas(string ClaimAddr, string Txid, int N, string UsedTxid,int Value,string Gas,int Status,DateTime Create,DateTime Pro)
+        public ProClaimgas(string ClaimAddr, string Txid, int N, string UsedTxid,int Value,decimal Gas,int Status,DateTime Create,DateTime Pro)
         {
             claimAddr = ClaimAddr;
             txid = Txid;
@@ -30,7 +30,7 @@ namespace Block_API.Controllers
         public string usedTxid { get; set; }
         public int n { get; set; }
         public int value { get; set; }
-        public string gas { get; set; }
+        public decimal gas { get; set; }
         public int status { get; set; }
         public DateTime create { get; set; }
         public DateTime pro { get; set; }

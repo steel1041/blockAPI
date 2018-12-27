@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
+using Block_API.Controllers;
 
 namespace NEO_Block_API.Controllers
 {
@@ -16,12 +17,14 @@ namespace NEO_Block_API.Controllers
         private string mongodbConnStr { get; set; }
         private string mongodbDatabase { get; set; }
         private string neoCliJsonRPCUrl { get; set; }
+        private string neoRpcUrl_mainnet { get; set; }
 
         httpHelper hh = new httpHelper();
         mongoHelper mh = new mongoHelper();
         Transaction tx = new Transaction();
         Contract ct = new Contract();
         Claim claim = new Claim();
+        Business bu = new Business();
 
         public Api(string node) {
             netnode = node;
@@ -35,6 +38,7 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
                     mongodbDatabase = mh.mongodbDatabase_mainnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_mainnet;
+                    neoRpcUrl_mainnet = mh.neoRpcUrl_mainnet;
                     break;
                 case "privatenet":
                     mongodbConnStr = mh.mongodbConnStr_privatenet;
@@ -109,7 +113,9 @@ namespace NEO_Block_API.Controllers
                     case "getblockcount":
                         result = getJAbyKV("blockcount", (long)(mh.GetData(mongodbConnStr, mongodbDatabase, "system_counter", "{counter:'block'}")[0]["lastBlockindex"]) + 1);
                         break;
-                    
+                    case "getngdblockcount":
+                        result = getJAbyJ(bu.getNgdBlockcount(neoRpcUrl_mainnet));
+                        break;
                     case "getcliblockcount":
                         var resp = hh.Post(neoCliJsonRPCUrl, "{'jsonrpc':'2.0','method':'getblockcount','params':[],'id':1}", System.Text.Encoding.UTF8, 1);
 
@@ -1170,6 +1176,15 @@ namespace NEO_Block_API.Controllers
                             findFliter = "{}";
                         }
                         result = getJAbyKV("operatedcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "operatedFee", findFliter));
+                        break;
+                    case "getOperatedFee":
+                        address = string.Empty;
+                        if (req.@params.Count() == 1)
+                        {
+                            address = (string)req.@params[0];
+                            
+                        }
+                        result = getJAbyJ(bu.getOperatedFee(mongodbConnStr, mongodbDatabase, address));
                         break;
                     case "getOperatedFeeBySAR":
                         if (req.@params.Count() == 3)

@@ -385,7 +385,7 @@ namespace NEO_Block_API.Controllers
                     {
                         var client = new MongoClient(mongodbConnStr);
                         var database = client.GetDatabase(mongodbDatabase);
-                        ProClaimgas pro = new ProClaimgas(claimAddr,txid, index, usedTxid, v, formatGas, 1, DateTime.Now, DateTime.Now);
+                        ProClaimgas pro = new ProClaimgas(claimAddr,txid, index, usedTxid, v, issueGas, 1, DateTime.Now, DateTime.Now);
                         var collectionPro = database.GetCollection<ProClaimgas>("ProClaimgas");
                         collectionPro.InsertOne(pro);
                     }
