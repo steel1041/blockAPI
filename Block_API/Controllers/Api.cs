@@ -122,7 +122,6 @@ namespace NEO_Block_API.Controllers
                         string cliResultStr = (string)JObject.Parse(resp)["result"];
                         result = getJAbyKV("cliblockcount", cliResultStr);
                         break;
-
                     case "claimContract":
                         if (req.@params.Count() > 0)
                         {
@@ -131,6 +130,14 @@ namespace NEO_Block_API.Controllers
                             string sarHash = req.@params[2].ToString();
                             result = getJAbyJ(claim.claimContract(mongodbConnStr, mongodbDatabase, contractAddr, claimAddr, neoCliJsonRPCUrl, sarHash));
                         }
+                        break;
+                    case "getProcessClaim":
+                        if (req.@params.Count() > 0)
+                        { 
+                            findFliter = "{status:" + req.@params[2].ToString() + "}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "ProClaimgas", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                         }
                         break;
                     case "processClaimStatus":
                         if (req.@params.Count() > 0)
