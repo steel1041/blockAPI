@@ -25,7 +25,6 @@ namespace Block_API.Controllers
 
         public ObjectId _id { get; set; }
         public string claimAddr { get; set; }
-        public int blockindex { get; set; }
         public string txid { get; set; }
         public string usedTxid { get; set; }
         public int n { get; set; }

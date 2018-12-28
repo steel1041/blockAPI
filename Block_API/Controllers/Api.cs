@@ -132,10 +132,10 @@ namespace NEO_Block_API.Controllers
                             result = getJAbyJ(claim.claimContract(mongodbConnStr, mongodbDatabase, contractAddr, claimAddr, neoCliJsonRPCUrl, sarHash));
                         }
                         break;
-                    case "processSigleTx":
+                    case "processClaimStatus":
                         if (req.@params.Count() > 0)
                         {
-                            result = getJAbyJ(claim.processSigleTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), int.Parse(req.@params[1].ToString())));
+                            result = getJAbyJ(claim.processClaimStatus(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), int.Parse(req.@params[1].ToString()), req.@params[2].ToString()));
                         }
                         break;
                     case "gettxcount":

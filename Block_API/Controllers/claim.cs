@@ -8,6 +8,7 @@ using System.IO;
 using Block_API.Controllers;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using System.Threading;
 
 namespace NEO_Block_API.Controllers
 {
@@ -285,7 +286,13 @@ namespace NEO_Block_API.Controllers
                 try
                 {
                     //处理提取后的utxo,记录每笔utxo原始账户信息
-                    proClaimData(mongodbConnStr, mongodbDatabase, claimGas);
+                    new Thread(o =>
+                    {
+                        proClaimData(mongodbConnStr, mongodbDatabase, claimGas);
+
+                    })
+                    { IsBackground = true}
+                    .Start();
                 }
                 catch (Exception e)
                 {
@@ -394,6 +401,70 @@ namespace NEO_Block_API.Controllers
             }
             return gas;
 
+        }
+
+        public JObject processClaimStatus(string mongodbConnStr, string mongodbDatabase, string txid, int n,string trTxid)
+        {
+            JObject ret = new JObject();
+            bool result = false;
+            string findFliter = "{txid:'" + txid + "',n:" + n + ",status:1}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "ProClaimgas", findFliter);
+            if (array.Count == 0)
+            {
+                ret.Add("result", result);
+                return ret;
+            }
+
+            JObject txOb = (JObject)array[0];
+            int status = (int)txOb["status"];
+            string claimAddr = (string)txOb["claimAddr"];
+            decimal gas = (decimal)txOb["gas"];
+
+            //2:已处理
+            if (status == 2)
+            {
+                ret.Add("result", result);
+                return ret;
+            }
+
+            //根据trTxid查询交易是否是gas转账
+            findFliter = "{txid:'" + trTxid + "'}";
+            JArray txs = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+            if (txs.Count > 0)
+            {
+                txOb = (JObject)txs[0];
+                //ContractTransaction
+                string type = (string)txOb["type"]; 
+                JArray vouts = (JArray)txOb["vout"];
+
+                if (vouts.Count > 0 && type == "ContractTransaction")
+                {
+                    JObject voutOb = (JObject)vouts[0];
+                    string address = (string)voutOb["address"];
+                    decimal value = (decimal)voutOb["value"];
+
+                    if(address == claimAddr && gas.CompareTo(value) == 0)
+                    {
+                        var client = new MongoClient(mongodbConnStr);
+                        var database = client.GetDatabase(mongodbDatabase);
+                        var coll = database.GetCollection<ProClaimgas>("ProClaimgas");
+                        BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + ",status:1}");
+                        List<ProClaimgas> queryBsonList = coll.Find(queryBson).ToList();
+
+                        if (queryBsonList.Count > 0)
+                        {
+                            ProClaimgas pro = queryBsonList[0];
+                            pro.status = 2;
+                            pro.pro = DateTime.Now;
+                            coll.ReplaceOne(queryBson, pro);
+                            result = true;
+                        }
+                    }
+                }
+
+            }
+            ret.Add("result", result);
+            return ret;
         }
 
         private string DecimalToString(decimal d)
