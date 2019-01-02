@@ -145,6 +145,12 @@ namespace NEO_Block_API.Controllers
                             result = getJAbyJ(claim.processClaimStatus(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), int.Parse(req.@params[1].ToString()), req.@params[2].ToString()));
                         }
                         break;
+                    case "lockClaimStatus":
+                        if (req.@params.Count() > 0)
+                        {
+                            result = getJAbyJ(claim.lockClaimStatus(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(), int.Parse(req.@params[1].ToString())));
+                        }
+                        break;
                     case "gettxcount":
                         //resultStr = "[{txcount:" + mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx") + "}]";
                         //result = getJAbyKV("txcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "tx"));

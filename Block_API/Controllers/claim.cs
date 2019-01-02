@@ -467,6 +467,46 @@ namespace NEO_Block_API.Controllers
             return ret;
         }
 
+        public JObject lockClaimStatus(string mongodbConnStr, string mongodbDatabase, string txid, int n)
+        {
+            JObject ret = new JObject();
+            bool result = false;
+            string findFliter = "{txid:'" + txid + "',n:" + n + ",status:1}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "ProClaimgas", findFliter);
+            if (array.Count == 0)
+            {
+                ret.Add("result", result);
+                return ret;
+            }
+
+            JObject txOb = (JObject)array[0];
+            int status = (int)txOb["status"];
+
+            //2:已处理
+            if (status == 2)
+            {
+                ret.Add("result", result);
+                return ret;
+            }
+
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var coll = database.GetCollection<ProClaimgas>("ProClaimgas");
+            BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + ",status:1}");
+            List<ProClaimgas> queryBsonList = coll.Find(queryBson).ToList();
+
+            if (queryBsonList.Count > 0)
+            {
+                ProClaimgas pro = queryBsonList[0];
+                pro.status = 2;
+                pro.pro = DateTime.Now;
+                coll.ReplaceOne(queryBson, pro);
+                result = true;
+            }
+            ret.Add("result", result);
+            return ret;
+        }
+
         private string DecimalToString(decimal d)
         {
             return d.ToString("#0.########");
