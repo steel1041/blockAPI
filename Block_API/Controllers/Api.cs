@@ -19,6 +19,12 @@ namespace NEO_Block_API.Controllers
         private string neoCliJsonRPCUrl { get; set; }
         private string neoRpcUrl_mainnet { get; set; }
 
+        public string hashSDUSD { get; set; }
+        public string hashSAR4C { get; set; }
+        public string hashSNEO { get; set; }
+        public string hashORACLE { get; set; }
+        public string addrSAR4C { get; set; }
+
         httpHelper hh = new httpHelper();
         mongoHelper mh = new mongoHelper();
         Transaction tx = new Transaction();
@@ -33,17 +39,22 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_testnet;
                     mongodbDatabase = mh.mongodbDatabase_testnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_testnet;
+                    hashSDUSD = bu.hashSDUSD_testnet;
+                    hashSAR4C = bu.hashSAR4C_testnet;
+                    hashSNEO = bu.hashSNEO_testnet;
+                    hashORACLE = bu.hashORACLE_testnet;
+                    addrSAR4C = bu.addrSAR4C_testnet;
                     break;
                 case "mainnet":
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
                     mongodbDatabase = mh.mongodbDatabase_mainnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_mainnet;
                     neoRpcUrl_mainnet = mh.neoRpcUrl_mainnet;
-                    break;
-                case "privatenet":
-                    mongodbConnStr = mh.mongodbConnStr_privatenet;
-                    mongodbDatabase = mh.mongodbDatabase_privatenet;
-                    neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_privatenet;
+                    hashSDUSD = bu.hashSDUSD_mainnet;
+                    hashSAR4C = bu.hashSAR4C_mainnet;
+                    hashSNEO = bu.hashSNEO_mainnet;
+                    hashORACLE = bu.hashORACLE_mainnet;
+                    addrSAR4C = bu.addrSAR4C_mainnet;
                     break;
                 case "swnet":
                     mongodbConnStr = mh.mongodbConnStr_swnet;
@@ -54,6 +65,11 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_pri;
                     mongodbDatabase = mh.mongodbDatabase_pri;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_pri;
+                    hashSDUSD = bu.hashSDUSD_prinet;
+                    hashSAR4C = bu.hashSAR4C_prinet;
+                    hashSNEO = bu.hashSNEO_prinet;
+                    hashORACLE = bu.hashORACLE_prinet;
+                    addrSAR4C = bu.addrSAR4C_prinet;
                     break;
             }
         }
@@ -1211,6 +1227,9 @@ namespace NEO_Block_API.Controllers
                         {
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
+                        break;
+                    case "getStaticReport":
+                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD,hashSNEO,hashSAR4C,hashORACLE,addrSAR4C));
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
