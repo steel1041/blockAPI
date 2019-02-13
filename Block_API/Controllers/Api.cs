@@ -990,6 +990,48 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
+                    case "getsar4CDetailList":
+                        findFliter = "{}";
+                        sortStr = "{'blockindex':1}";
+
+                        if (req.@params.Count() == 3)
+                        {
+                            string status = req.@params[0].ToString();
+
+                            findFliter = "{status:" + status + "}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            string status = req.@params[0].ToString();
+                            string assetId = req.@params[1].ToString();
+
+                            findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+
+                        }
+                        else
+                        {
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+                        }
+                        break;
+                    case "getsar4CDetailByAdd":
+                        findFliter = "{}";
+                        sortStr = "{'blockindex':1}";
+
+                        if (req.@params.Count() == 1)
+                        {
+                            addr = req.@params[0].ToString();
+
+                            findFliter = "{status:1,addr:'" + addr + "'}";
+                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C, hashORACLE);
+                        }
+                        
+                        break;
                     case "getOracleOperated":
                         if (req.@params.Count() == 5)
                         {
