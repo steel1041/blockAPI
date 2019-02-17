@@ -26,18 +26,21 @@ namespace Block_API.Controllers
         public string hashSNEO_prinet = string.Empty;
         public string hashORACLE_prinet = string.Empty;
         public string addrSAR4C_prinet = string.Empty;
+        public string hashSAR4B_prinet = string.Empty;
 
         public string hashSDUSD_testnet = string.Empty;
         public string hashSAR4C_testnet = string.Empty;
         public string hashSNEO_testnet = string.Empty;
         public string hashORACLE_testnet = string.Empty;
         public string addrSAR4C_testnet = string.Empty;
+        public string hashSAR4B_testnet = string.Empty;
 
         public string hashSDUSD_mainnet = string.Empty;
         public string hashSAR4C_mainnet = string.Empty;
         public string hashSNEO_mainnet = string.Empty;
         public string hashORACLE_mainnet = string.Empty;
         public string addrSAR4C_mainnet = string.Empty;
+        public string hashSAR4B_mainnet = string.Empty;
 
         private const int EIGHT_ZERO = 100000000; 
 
@@ -54,18 +57,21 @@ namespace Block_API.Controllers
 
             hashSDUSD_prinet = config["hashSDUSD_prinet"];
             hashSAR4C_prinet = config["hashSAR4C_prinet"];
+            hashSAR4B_prinet = config["hashSAR4B_prinet"];
             hashSNEO_prinet = config["hashSNEO_prinet"];
             hashORACLE_prinet = config["hashORACLE_prinet"];
             addrSAR4C_prinet = config["addrSAR4C_prinet"];
 
             hashSDUSD_testnet = config["hashSDUSD_testnet"];
             hashSAR4C_testnet = config["hashSAR4C_testnet"];
+            hashSAR4B_testnet = config["hashSAR4B_testnet"];
             hashSNEO_testnet = config["hashSNEO_testnet"];
             hashORACLE_testnet = config["hashORACLE_testnet"];
             addrSAR4C_testnet = config["addrSAR4C_testnet"];
 
             hashSDUSD_mainnet = config["hashSDUSD_mainnet"];
             hashSAR4C_mainnet = config["hashSAR4C_mainnet"];
+            hashSAR4B_mainnet = config["hashSAR4B_mainnet"];
             hashSNEO_mainnet = config["hashSNEO_mainnet"];
             hashORACLE_mainnet = config["hashORACLE_mainnet"];
             addrSAR4C_mainnet = config["addrSAR4C_mainnet"];
@@ -423,6 +429,116 @@ namespace Block_API.Controllers
             return ret;
         }
 
+        public JArray processSAR4BDetail(JArray arrs, string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSAR4B, string hashORACLE)
+        {
+            JArray ret = new JArray();
+
+            foreach (JObject ob in arrs)
+            {
+                string addr = (string)ob["addr"];
+                if (!string.IsNullOrEmpty(addr))
+                {
+                    try
+                    {
+                        string script = invokeScript(new Hash160(hashSAR4B), "getSAR4B", "(addr)" + addr);
+                        JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                        JObject sarDetail = new JObject();
+                        //stack arrays
+                        string type = (string)((JArray)jo["stack"])[0]["type"];
+                        JArray sar = (JArray)((JArray)jo["stack"])[0]["value"];
+
+                        //name
+                        type = (string)sar[0]["type"];
+                        string value = (string)sar[0]["value"];
+                        string name = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
+                        sarDetail.Add("name", name);
+                        Console.WriteLine("name:" + name);
+
+                        //symbol
+                        type = (string)sar[1]["type"];
+                        value = (string)sar[1]["value"];
+                        string symbol = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
+                        sarDetail.Add("symbol", symbol);
+                        Console.WriteLine("symbol:" + symbol);
+
+                        //decimals
+                        type = (string)sar[2]["type"];
+                        value = (string)sar[2]["value"];
+                        string decimals = NEP5.getNumStrFromStr(type, value, 0);
+                        sarDetail.Add("decimals", decimals);
+                        Console.WriteLine("decimals:" + decimals);
+
+                        //SAR地址
+                        string ownerValue = (string)sar[3]["value"];
+                        string owner = ThinNeo.Helper.GetAddressFromScriptHash(ThinNeo.Helper.HexString2Bytes(ownerValue));
+                        sarDetail.Add("owner", owner);
+                        Console.WriteLine("owner:" + owner);
+
+                        //创建SAR的txid
+                        string txidValue = (string)sar[4]["value"];
+                        string txid = "0x" + ThinNeo.Helper.Bytes2HexString(ThinNeo.Helper.HexString2Bytes(txidValue).Reverse().ToArray());
+                        sarDetail.Add("txid", txid);
+                        Console.WriteLine("txid:" + txid);
+
+                        //hasLocked
+                        type = (string)sar[5]["type"];
+                        value = (string)sar[5]["value"];
+                        string lockedSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        string locked = NEP5.getNumStrFromStr(type, value, 8);
+                        sarDetail.Add("locked", locked);
+                        Console.WriteLine("locked:" + locked);
+
+                        //hasDrawed
+                        type = (string)sar[6]["type"];
+                        value = (string)sar[6]["value"];
+                        string hasDrawedSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        string hasDrawed = NEP5.getNumStrFromStr(type, value, 8);
+                        sarDetail.Add("hasDrawed", hasDrawed);
+                        Console.WriteLine("hasDrawed:" + hasDrawed);
+
+                        //anchor
+                        type = (string)sar[8]["type"];
+                        value = (string)sar[8]["value"];
+                        string anchor = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
+                        sarDetail.Add("anchor", anchor);
+                        Console.WriteLine("anchor:" + anchor);
+
+                        //计算当前抵押率
+                        BigInteger sdsPrice = getSDSPrice(neoCliJsonRPCUrl, hashORACLE);
+                        BigInteger rate = getTypeA(neoCliJsonRPCUrl, hashORACLE, "liquidate_line_rate_b");
+                        if (hasDrawedSrc != "0")
+                        {
+                            //乘以100的值
+                            decimal mortgagerate = Decimal.Parse(sdsPrice.ToString()) * Decimal.Parse(lockedSrc) / (Decimal.Parse(hasDrawedSrc) * SIX_ZERO);
+                            sarDetail.Add("mortgageRate", mortgagerate);
+                            Console.WriteLine("mortgageRate");
+
+                            //SAR状态 1:安全，2:不安全
+                            int status = 1;
+                            if (mortgagerate.CompareTo(Decimal.Parse(rate.ToString())) < 0)
+                            {
+                                status = 2;
+                            }
+                            sarDetail.Add("status", status);
+                        }
+                        else
+                        {
+                            sarDetail.Add("mortgageRate", "0");
+                            sarDetail.Add("status", 1);
+
+                        }
+                        ret.Add(sarDetail);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("error" + e.Message);
+                    }
+                }
+            }
+
+            return ret;
+        }
 
         public JArray processOrderMortgageRate(JArray arrs, string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSAR4C, string hashORACLE, bool desc = false) {
             JArray lists = processSARDetail(arrs, mongodbConnStr, mongodbDatabase,neoCliJsonRPCUrl, hashSAR4C,hashORACLE);
