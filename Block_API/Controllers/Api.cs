@@ -25,6 +25,7 @@ namespace NEO_Block_API.Controllers
         public string hashSNEO { get; set; }
         public string hashORACLE { get; set; }
         public string addrSAR4C { get; set; }
+        public string oldAddrSAR4C { get; set; }
 
         httpHelper hh = new httpHelper();
         mongoHelper mh = new mongoHelper();
@@ -46,6 +47,7 @@ namespace NEO_Block_API.Controllers
                     hashSNEO = bu.hashSNEO_testnet;
                     hashORACLE = bu.hashORACLE_testnet;
                     addrSAR4C = bu.addrSAR4C_testnet;
+                    oldAddrSAR4C = bu.oldAddrSAR4C_testnet;
                     break;
                 case "mainnet":
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
@@ -58,6 +60,7 @@ namespace NEO_Block_API.Controllers
                     hashSNEO = bu.hashSNEO_mainnet;
                     hashORACLE = bu.hashORACLE_mainnet;
                     addrSAR4C = bu.addrSAR4C_mainnet;
+                    oldAddrSAR4C = bu.oldAddrSAR4C_mainnet;
                     break;
                 case "swnet":
                     mongodbConnStr = mh.mongodbConnStr_swnet;
@@ -74,6 +77,7 @@ namespace NEO_Block_API.Controllers
                     hashSNEO = bu.hashSNEO_prinet;
                     hashORACLE = bu.hashORACLE_prinet;
                     addrSAR4C = bu.addrSAR4C_prinet;
+                    oldAddrSAR4C = bu.oldAddrSAR4C_prinet;
                     break;
             }
         }
@@ -1316,7 +1320,7 @@ namespace NEO_Block_API.Controllers
                         }
                         break;
                     case "getStaticReport":
-                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD,hashSNEO,hashSAR4C,hashORACLE,addrSAR4C));
+                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD,hashSNEO,hashSAR4C,hashORACLE,addrSAR4C,oldAddrSAR4C));
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

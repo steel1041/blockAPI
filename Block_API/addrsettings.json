@@ -5,6 +5,7 @@
   "hashSNEO_prinet": "0xa2aeccd6a7a7808b9959866f5463e5dcb911a578",
   "hashORACLE_prinet": "0xfde69a7dd2a1c948977fb3ce512158987c0e2197",
   "addrSAR4C_prinet": "AHHbQEaBQbvDuNJofQn7PfHotJRoWBahXr",
+  "oldAddrSAR4C_prinet": "",
 
   "hashSDUSD_testnet": "0x80fe8494d517a0c9caaabd5ddffd48593f67d70f",
   "hashSAR4C_testnet": "0x1775f1af5df77ff876b2d7a06e256f1388199dc7",
@@ -12,12 +13,14 @@
   "hashSNEO_testnet": "0x789afc2bba96905d628cb41598c8f8cfcf213b58",
   "hashORACLE_testnet": "0xfde69a7dd2a1c948977fb3ce512158987c0e2197",
   "addrSAR4C_testnet": "AZyLK9rAivEVVJP96Tixetg5MJx5QmUrHq",
+  "oldAddrSAR4C_testnet": "AQRC6CNtZ7PAXyHwvk7cyVqz41p6EPJSV9",
+
 
   "hashSDUSD_mainnet": "0x7146278a76c33fc6bb870fcaa428e3cdb16809ac",
   "hashSAR4C_mainnet": "0x754c10820de5f6d9b75091c134294d6cd986c89e",
   "hashSAR4B_mainnet": "0x203205eef5a81c093d04b5c591d8f2308598caa2",
   "hashSNEO_mainnet": "0xa2aeccd6a7a7808b9959866f5463e5dcb911a578",
   "hashORACLE_mainnet": "0xfde69a7dd2a1c948977fb3ce512158987c0e2197",
-  "addrSAR4C_mainnet": "AWFSdehLUrvGP34G7WKgjcWGriBLGxvi42"
-
+  "addrSAR4C_mainnet": "AWFSdehLUrvGP34G7WKgjcWGriBLGxvi42",
+  "oldAddrSAR4C_mainnet": ""
 }

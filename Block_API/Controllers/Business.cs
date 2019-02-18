@@ -26,6 +26,7 @@ namespace Block_API.Controllers
         public string hashSNEO_prinet = string.Empty;
         public string hashORACLE_prinet = string.Empty;
         public string addrSAR4C_prinet = string.Empty;
+        public string oldAddrSAR4C_prinet = string.Empty;
         public string hashSAR4B_prinet = string.Empty;
 
         public string hashSDUSD_testnet = string.Empty;
@@ -33,6 +34,7 @@ namespace Block_API.Controllers
         public string hashSNEO_testnet = string.Empty;
         public string hashORACLE_testnet = string.Empty;
         public string addrSAR4C_testnet = string.Empty;
+        public string oldAddrSAR4C_testnet = string.Empty;
         public string hashSAR4B_testnet = string.Empty;
 
         public string hashSDUSD_mainnet = string.Empty;
@@ -40,6 +42,7 @@ namespace Block_API.Controllers
         public string hashSNEO_mainnet = string.Empty;
         public string hashORACLE_mainnet = string.Empty;
         public string addrSAR4C_mainnet = string.Empty;
+        public string oldAddrSAR4C_mainnet = string.Empty;
         public string hashSAR4B_mainnet = string.Empty;
 
         private const int EIGHT_ZERO = 100000000; 
@@ -61,6 +64,7 @@ namespace Block_API.Controllers
             hashSNEO_prinet = config["hashSNEO_prinet"];
             hashORACLE_prinet = config["hashORACLE_prinet"];
             addrSAR4C_prinet = config["addrSAR4C_prinet"];
+            oldAddrSAR4C_prinet = config["oldAddrSAR4C_prinet"];
 
             hashSDUSD_testnet = config["hashSDUSD_testnet"];
             hashSAR4C_testnet = config["hashSAR4C_testnet"];
@@ -68,6 +72,7 @@ namespace Block_API.Controllers
             hashSNEO_testnet = config["hashSNEO_testnet"];
             hashORACLE_testnet = config["hashORACLE_testnet"];
             addrSAR4C_testnet = config["addrSAR4C_testnet"];
+            oldAddrSAR4C_testnet = config["oldAddrSAR4C_testnet"];
 
             hashSDUSD_mainnet = config["hashSDUSD_mainnet"];
             hashSAR4C_mainnet = config["hashSAR4C_mainnet"];
@@ -75,6 +80,7 @@ namespace Block_API.Controllers
             hashSNEO_mainnet = config["hashSNEO_mainnet"];
             hashORACLE_mainnet = config["hashORACLE_mainnet"];
             addrSAR4C_mainnet = config["addrSAR4C_mainnet"];
+            oldAddrSAR4C_mainnet = config["oldAddrSAR4C_mainnet"];
         }
 
         public JObject getNgdBlockcount(string neoRpcUrl_mainnet)
@@ -115,7 +121,7 @@ namespace Block_API.Controllers
         }
 
         public JObject getStaticReport(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSDUSD, string hashSNEO, string hashSAR4C, string hashORACLE,
-            string addrSAR4C)
+            string addrSAR4C,string oldAddrSAR4C)
         {
             JObject ob = new JObject();
 
@@ -143,7 +149,18 @@ namespace Block_API.Controllers
             balanceType = (string)((JArray)jo["stack"])[0]["type"];
             balanceStr = (string)((JArray)jo["stack"])[0]["value"];
             balanceBigint = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
-            decimal sneoLocked = decimal.Parse(balanceBigint);
+
+            //原SAR合约中锁定的SNEO
+            string balanceBigintOld = "0";
+            if (oldAddrSAR4C != "") {
+                script = invokeScript(new Hash160(hashSNEO), "balanceOf", "(addr)" + oldAddrSAR4C);
+                jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                balanceBigintOld = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+            }
+
+            decimal sneoLocked = decimal.Parse(balanceBigint) + decimal.Parse(balanceBigintOld);
             ob.Add("lockedTotal", sneoLocked);
 
             //SDS fee
