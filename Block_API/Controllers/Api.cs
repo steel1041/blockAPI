@@ -1326,7 +1326,7 @@ namespace NEO_Block_API.Controllers
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
                     JsonPRCresponse_Error resE = new JsonPRCresponse_Error(req.id, (int)result[0]["errorCode"], (string)result[0]["errorMsg"], (string)result[0]["errorData"]);
-                    return resE;
+                    return resE;    
                 }
                 if (result.Count == 0)
                 {
