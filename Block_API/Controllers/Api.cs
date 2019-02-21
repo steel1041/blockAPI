@@ -26,6 +26,8 @@ namespace NEO_Block_API.Controllers
         public string hashORACLE { get; set; }
         public string addrSAR4C { get; set; }
         public string oldAddrSAR4C { get; set; }
+        public string hashSDS { get; set; }
+        public string hashTokenized { get; set; }
 
         httpHelper hh = new httpHelper();
         mongoHelper mh = new mongoHelper();
@@ -48,6 +50,8 @@ namespace NEO_Block_API.Controllers
                     hashORACLE = bu.hashORACLE_testnet;
                     addrSAR4C = bu.addrSAR4C_testnet;
                     oldAddrSAR4C = bu.oldAddrSAR4C_testnet;
+                    hashSDS = bu.hashSDS_testnet;
+                    hashTokenized = bu.hashTokenized_testnet;
                     break;
                 case "mainnet":
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
@@ -61,6 +65,8 @@ namespace NEO_Block_API.Controllers
                     hashORACLE = bu.hashORACLE_mainnet;
                     addrSAR4C = bu.addrSAR4C_mainnet;
                     oldAddrSAR4C = bu.oldAddrSAR4C_mainnet;
+                    hashSDS = bu.hashSDS_mainnet;
+                    hashTokenized = bu.hashTokenized_mainnet;
                     break;
                 case "swnet":
                     mongodbConnStr = mh.mongodbConnStr_swnet;
@@ -78,6 +84,8 @@ namespace NEO_Block_API.Controllers
                     hashORACLE = bu.hashORACLE_prinet;
                     addrSAR4C = bu.addrSAR4C_prinet;
                     oldAddrSAR4C = bu.oldAddrSAR4C_prinet;
+                    hashSDS = bu.hashSDS_prinet;
+                    hashTokenized = bu.hashTokenized_prinet;
                     break;
             }
         }
@@ -346,32 +354,34 @@ namespace NEO_Block_API.Controllers
 
                         break;
                     case "getbalance":
-                        findFliter = "{addr:'" + req.@params[0] + "',used:''}";
-                        JArray utxos = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
-                        Dictionary<string, decimal> balance = new Dictionary<string, decimal>();
-                        foreach (JObject j in utxos)
-                        {
-                            if (!balance.ContainsKey((string)j["asset"]))
-                            {
-                                balance.Add((string)j["asset"], (decimal)j["value"]);
-                            }
-                            else
-                            {
-                                balance[(string)j["asset"]] += (decimal)j["value"];
-                            }
-                        }
-                        JArray balanceJA = new JArray();
-                        foreach (KeyValuePair<string, decimal> kv in balance)
-                        {
-                            JObject j = new JObject();
-                            j.Add("asset", kv.Key);
-                            j.Add("balance", kv.Value);
-                            JObject asset = (JObject)mh.GetData(mongodbConnStr, mongodbDatabase, "asset", "{id:'" + kv.Key + "'}")[0];
-                            JArray name = (JArray)asset["name"];
-                            j.Add("name", name);
-                            balanceJA.Add(j);
-                        }
-                        result = balanceJA;
+                        addr = (string)req.@params[0];
+                        //findFliter = "{addr:'" + req.@params[0] + "',used:''}";
+                        //JArray utxos = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
+                        //Dictionary<string, decimal> balance = new Dictionary<string, decimal>();
+                        //foreach (JObject j in utxos)
+                        //{
+                        //    if (!balance.ContainsKey((string)j["asset"]))
+                        //    {
+                        //        balance.Add((string)j["asset"], (decimal)j["value"]);
+                        //    }
+                        //    else
+                        //    {
+                        //        balance[(string)j["asset"]] += (decimal)j["value"];
+                        //    }
+                        //}
+                        //JArray balanceJA = new JArray();
+                        //foreach (KeyValuePair<string, decimal> kv in balance)
+                        //{
+                        //    JObject j = new JObject();
+                        //    j.Add("asset", kv.Key);
+                        //    j.Add("balance", kv.Value);
+                        //    JObject asset = (JObject)mh.GetData(mongodbConnStr, mongodbDatabase, "asset", "{id:'" + kv.Key + "'}")[0];
+                        //    JArray name = (JArray)asset["name"];
+                        //    j.Add("name", name);
+                        //    balanceJA.Add(j);
+                        //}
+                        //result = balanceJA;
+                        result = bu.getGlobalBalance(mongodbConnStr, mongodbDatabase,addr);
                         break;
                     case "getcontractscript":
                         findFliter = "{hash:'" + ((string)req.@params[0]).formatHexStr() + "'}";
@@ -517,175 +527,22 @@ namespace NEO_Block_API.Controllers
                         {
                             isNeedBalance = ((Int64)req.@params[1] == 1) ? true : false;
                         }
+
+                        result = bu.getNEP5Balance(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,NEP5addr,isNeedBalance);
                         
-                        //按资产汇集收到的钱(仅资产ID)
-                        string findTransferTo = "{ to:'" + NEP5addr + "'}";
-                        JArray transferToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findTransferTo);
-                        List<NEP5.Transfer> tfts = new List<NEP5.Transfer>();
-                        foreach (JObject tfJ in transferToJA)
-                        {
-                            tfts.Add(new NEP5.Transfer(tfJ));
-                        }
-                        var queryTo = from tft in tfts
-                                    group tft by tft.asset into tftG
-                                    select new { assetid = tftG.Key};
-                        var assetAdds = queryTo.ToList();
-
-                        //如果需要余额，则通过cli RPC批量获取余额
-                        List<NEP5.AssetBalanceOfAddr> addrAssetBalances = new List<NEP5.AssetBalanceOfAddr>();
-                        if (isNeedBalance) {
-                            List<NEP5.AssetBalanceOfAddr> addrAssetBalancesTemp = new List<NEP5.AssetBalanceOfAddr>();
-                            foreach (var assetAdd in assetAdds)
-                            {
-                                string findNep5Asset = "{assetid:'" + assetAdd.assetid + "'}";
-                                JArray Nep5AssetJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5asset", findNep5Asset);
-                                string Symbol = (string)Nep5AssetJA[0]["symbol"];
-
-                                addrAssetBalancesTemp.Add(new NEP5.AssetBalanceOfAddr(assetAdd.assetid, Symbol, string.Empty));
-                            }
-
-                            List<string> nep5Hashs = new List<string>();
-                            JArray queryParams = new JArray();
-                            byte[] NEP5allAssetOfAddrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP5addr);
-                            string NEP5allAssetOfAddrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5allAssetOfAddrHash.Reverse().ToArray());
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                nep5Hashs.Add(abt.assetid);
-                                queryParams.Add(JArray.Parse("['(str)balanceOf',['(hex)" + NEP5allAssetOfAddrHashHex + "']]"));                               
-                            }
-                            JArray NEP5allAssetBalanceJA = (JArray)ct.callContractForTestMulti(neoCliJsonRPCUrl, nep5Hashs, queryParams)["stack"];
-                            var a = Newtonsoft.Json.JsonConvert.SerializeObject(NEP5allAssetBalanceJA);
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                string allBalanceStr = (string)NEP5allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["value"];
-                                string allBalanceType = (string)NEP5allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["type"];
-                                //获取NEP5资产信息，获取精度
-                                NEP5.Asset NEP5asset = new NEP5.Asset(mongodbConnStr, mongodbDatabase, abt.assetid);
-
-                                abt.balance = NEP5.getNumStrFromStr(allBalanceType,allBalanceStr, NEP5asset.decimals);
-                            }
-
-                            //去除余额为0的资产
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                if (abt.balance != string.Empty && abt.balance != "0")
-                                {
-                                    addrAssetBalances.Add(abt);
-                                }
-                            }
-                        }
-
-                        ////按资产汇集支出的钱
-                        //string findTransferFrom = "{ from:'" + NEP5addr + "'}";
-                        //JArray transferFromJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findTransferFrom);
-                        //List<NEP5.Transfer> tffs = new List<NEP5.Transfer>();
-                        //foreach (JObject tfJ in transferFromJA)
-                        //{
-                        //    tffs.Add(new NEP5.Transfer(tfJ));
-                        //}
-                        //var queryFrom = from tff in tffs
-                        //                group tff by tff.asset into tffG
-                        //            select new { assetid = tffG.Key, sumOfValue = tffG.Sum(m => m.value) };
-                        //var assetRemoves = queryFrom.ToList();
-
-                        ////以支出的钱扣减收到的钱得到余额
-                        //JArray JAadds = JArray.FromObject(assetAdds);
-                        //foreach (JObject Jadd in JAadds) {
-                        //    foreach (var assetRemove in assetRemoves)
-                        //    {
-                        //        if ((string)Jadd["assetid"] == assetRemove.assetid)
-                        //        {
-                        //            Jadd["sumOfValue"] = (decimal)Jadd["sumOfValue"] - assetRemove.sumOfValue;
-                        //            break;
-                        //        }
-                        //    }
-                        //}
-                        //var a = Newtonsoft.Json.JsonConvert.SerializeObject(JAadds);
-
-                        //***********
-                        //经简单测试，仅看transfer记录，所有to减去所有from并不一定等于合约查询得到的地址余额(可能有其他非标方法消耗了余额，尤其是测试网)，废弃这种方法，还是采用调用NEP5合约获取地址余额方法的方式
-                        //这里给出所有该地址收到过的资产hash，可以配合其他接口获取资产信息和余额
-                        //***********
-                        if (!isNeedBalance)
-                        {
-                            result = JArray.FromObject(assetAdds);
-                        }
-                        else
-                        {
-                            result = JArray.FromObject(addrAssetBalances);
-                        }                   
-
                         break;
                     case "getallnep55assetofaddress":
                         string NEP55addr = (string)req.@params[0];
                         string NEP55asset = (string)req.@params[1];
-                          isNeedBalance = false;
+
+                        isNeedBalance = false;
                         if (req.@params.Count() > 2)
                         {
                             isNeedBalance = ((Int64)req.@params[2] == 1) ? true : false;
                         }
 
-                        //按资产汇集收到的钱(按照name)
-                         findTransferTo = "{ to:'" + NEP55addr + "',asset:'"+ NEP55asset + "'}";
-                        JArray transferSARToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "transferSAR", findTransferTo);
-                        List<NEP55.Transfer55> tfts55 = new List<NEP55.Transfer55>();
-                        foreach (JObject tfJ in transferSARToJA)
-                        {
-                            tfts55.Add(new NEP55.Transfer55(tfJ));
-                        }
-                        var queryTo55 = from tft in tfts55
-                                      group tft by tft.name into tftG
-                                      select new { name = tftG.Key };
-                        var nameAdds = queryTo55.ToList();
-
-                        //如果需要余额，则通过cli RPC批量获取余额
-                        List<NEP55.AssetBalanceOfAddr> AssetBalances = new List<NEP55.AssetBalanceOfAddr>();
-                        if (isNeedBalance)
-                        {
-                            List<NEP55.AssetBalanceOfAddr> addrAssetBalancesTemp = new List<NEP55.AssetBalanceOfAddr>();
-                            foreach (var nameAdd in nameAdds)
-                            {
-                                addrAssetBalancesTemp.Add(new NEP55.AssetBalanceOfAddr(NEP55asset, nameAdd.name, nameAdd.name, string.Empty));
-                            }
-
-                            List<string> nep55Contract = new List<string>();
-                            JArray queryParams = new JArray();
-                            byte[] NEP5allAssetOfAddrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP55addr);
-                            string NEP5allAssetOfAddrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5allAssetOfAddrHash.Reverse().ToArray());
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                nep55Contract.Add(NEP55asset);
-                                queryParams.Add(JArray.Parse("['(str)balanceOf',['(str)" + abt.name +"','(hex)"+ NEP5allAssetOfAddrHashHex + "']]"));
-                            }
-                            JArray NEP55allAssetBalanceJA = (JArray)ct.callContractForTest(neoCliJsonRPCUrl, nep55Contract, queryParams)["stack"];
-                            var a = Newtonsoft.Json.JsonConvert.SerializeObject(NEP55allAssetBalanceJA);
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                string allBalanceStr = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["value"];
-                                string allBalanceType = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["type"];
-
-                                abt.balance = NEP5.getNumStrFromStr(allBalanceType, allBalanceStr, 8);
-                            }
-
-                            //去除余额为0的资产
-                            foreach (var abt in addrAssetBalancesTemp)
-                            {
-                                if (abt.balance != string.Empty && abt.balance != "0")
-                                {
-                                    AssetBalances.Add(abt);
-                                }
-                            }
-                        }
-
-                        if (!isNeedBalance)
-                        {
-                            result = JArray.FromObject(nameAdds);
-                        }
-                        else
-                        {
-                            result = JArray.FromObject(AssetBalances);
-                        }
-
+                        result = bu.getNEP55Balance(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,NEP55addr,NEP55asset,isNeedBalance);
+                        
                         break;
                     case "getnep5asset":
                         findFliter = "{assetid:'" + ((string)req.@params[0]).formatHexStr() + "'}";
@@ -1321,6 +1178,29 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getStaticReport":
                         result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD,hashSNEO,hashSAR4C,hashORACLE,addrSAR4C,oldAddrSAR4C));
+                        break;
+                    case "getAllassetBalance":
+                        if (req.@params.Count() == 1)
+                        {
+                            address = (string)req.@params[0];
+                            result = bu.getAllassetBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,address, hashSAR4B, hashTokenized, hashORACLE,hashSDUSD,hashSNEO,hashSDS);
+                        }
+                        break;
+                    case "getOracleConfig":
+                        if (req.@params.Count() == 2)
+                        {
+                            string type = (string)req.@params[0];
+                            string key = (string)req.@params[1];
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, type, key);
+                        }
+                        else if (req.@params.Count() == 1)
+                        {
+                            string type = (string)req.@params[0];
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, type, "");
+                        }
+                        else {
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, "", "");
+                        }
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
