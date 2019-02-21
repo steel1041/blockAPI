@@ -194,7 +194,7 @@ namespace Block_API.Controllers
 
             if ((sdusdTotal - bondTotal) > 0)
             {
-                ob.Add("mortgageRate", decimal.Round((sneoLocked * sneo_price) / ((sdusdTotal - bondTotal) * 100000000), 4) * 100 + "%");
+                ob.Add("mortgageRate", decimal.Round((sneoLocked * sneo_price) / ((sdusdTotal - bondTotal) * 100000000), 6) * 100 + "%");
             }
             else {
                 ob.Add("mortgageRate", "150%");
