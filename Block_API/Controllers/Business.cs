@@ -561,10 +561,13 @@ namespace Block_API.Controllers
                         if (hasDrawedSrc != "0")
                         {
                             //乘以100的值
-                            decimal mortgagerate = Decimal.Parse(sdsPrice.ToString()) * Decimal.Parse(lockedSrc) / (Decimal.Parse(hasDrawedSrc) * SIX_ZERO);
+                            BigInteger anchorPrice = getAnchor(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4B,name,hashORACLE);
+                            decimal mortgagerate = Decimal.Parse(sdsPrice.ToString()) * Decimal.Parse(lockedSrc)*100/ (Decimal.Parse(hasDrawedSrc) * Decimal.Parse(anchorPrice.ToString()));
                             sarDetail.Add("mortgageRate", mortgagerate);
                             Console.WriteLine("mortgageRate");
 
+                            //nep55价值
+                            sarDetail.Add("nep55Value",decimal.Parse(hasDrawed)* Decimal.Parse(anchorPrice.ToString())/EIGHT_ZERO);
                             //SAR状态 1:安全，2:不安全
                             int status = 1;
                             if (mortgagerate.CompareTo(Decimal.Parse(rate.ToString())) < 0)
@@ -578,6 +581,15 @@ namespace Block_API.Controllers
                             sarDetail.Add("mortgageRate", "0");
                             sarDetail.Add("status", 1);
 
+                        }
+
+                        if (lockedSrc != "0")
+                        {
+                            sarDetail.Add("sdsValue", decimal.Parse(locked) * Decimal.Parse(sdsPrice.ToString()) / EIGHT_ZERO);
+                        }
+                        else
+                        {
+                            sarDetail.Add("sdsValue",0);
                         }
                         ret.Add(sarDetail);
 
