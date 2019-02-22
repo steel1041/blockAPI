@@ -578,6 +578,7 @@ namespace Block_API.Controllers
                         }
                         else
                         {
+                            sarDetail.Add("nep55Value", 0);
                             sarDetail.Add("mortgageRate", "0");
                             sarDetail.Add("status", 1);
 
