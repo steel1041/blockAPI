@@ -548,6 +548,12 @@ namespace Block_API.Controllers
                         sarDetail.Add("hasDrawed", hasDrawed);
                         Console.WriteLine("hasDrawed:" + hasDrawed);
 
+                        //status SAR状态 1:安全，2:不安全,3:不可用
+                        type = (string)sar[7]["type"];
+                        value = (string)sar[7]["value"];
+                        string statusSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        int status = int.Parse(statusSrc);
+
                         //anchor
                         type = (string)sar[8]["type"];
                         value = (string)sar[8]["value"];
@@ -569,21 +575,18 @@ namespace Block_API.Controllers
                             //nep55价值
                             sarDetail.Add("nep55Value",decimal.Parse(hasDrawed)* Decimal.Parse(anchorPrice.ToString())/EIGHT_ZERO);
                             //SAR状态 1:安全，2:不安全
-                            int status = 1;
                             if (mortgagerate.CompareTo(Decimal.Parse(rate.ToString())) < 0)
                             {
                                 status = 2;
                             }
-                            sarDetail.Add("status", status);
                         }
                         else
                         {
                             sarDetail.Add("nep55Value", 0);
                             sarDetail.Add("mortgageRate", "0");
-                            sarDetail.Add("status", 1);
 
                         }
-
+                        sarDetail.Add("status", status);
                         if (lockedSrc != "0")
                         {
                             sarDetail.Add("sdsValue", decimal.Parse(locked) * Decimal.Parse(sdsPrice.ToString()) / EIGHT_ZERO);
@@ -730,9 +733,9 @@ namespace Block_API.Controllers
                     decimal price = 0;
                     decimal value = 0;
 
-                    BigInteger anchorPrice = getAnchor(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,assetid,name,hashORACLE);
-
-                    price = decimal.Parse(anchorPrice.ToString()) / EIGHT_ZERO;
+                    JObject sar = getSAR4B(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, name, hashORACLE);
+                    string owner = (string)sar["addr"];
+                    price = decimal.Parse((string)sar["price"]) / EIGHT_ZERO;
                     value = decimal.Parse(balance) * price;
                     nep55.Add("assetid", assetid);
                     nep55.Add("balance", decimal.Parse(balance));
@@ -740,6 +743,28 @@ namespace Block_API.Controllers
                     nep55.Add("price", price);
                     nep55.Add("symbol", name);
                     nep55.Add("type", "nep55");
+                    nep55.Add("owner",owner);
+
+                    int status = 1;
+                    //直接判断合约里面有没有SAR
+                    string script = invokeScript(new Hash160(hashSAR4B), "getSAR4B", "(addr)" + owner);
+                    JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+
+                    //stack arrays
+                    string type = (string)((JArray)jo["stack"])[0]["type"];
+                    if (type == "Array")
+                    {
+                        JArray sars = (JArray)((JArray)jo["stack"])[0]["value"];
+                        if (sars != null)
+                        {
+                            type = (string)sars[7]["type"];
+                            string valueStatus = (string)sars[7]["value"];
+                            string statusSrc = NEP5.getNumStrFromStr(type, valueStatus, 0);
+                            status = int.Parse(statusSrc);
+
+                        }
+                    }
+                    nep55.Add("status", status);
                     ret.Add(nep55);
                 }
             }
@@ -761,6 +786,23 @@ namespace Block_API.Controllers
             }
 
             return getTypeBPrice(neoCliJsonRPCUrl,hashORACLE,anchor);
+        }
+
+        private JObject getSAR4B(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSAR4B, string name, string hashORACLE)
+        {
+            JObject sar = null;
+            string anchor = "anchor_type_usd";
+            string findFliter = "{name:'" + name + "',asset:'" + hashSAR4B + "',status:1}";
+            JArray sars = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter);
+            if (sars.Count > 0)
+            {
+                sar = (JObject)sars[0];
+                anchor = (string)sar["anchor"];
+
+            }
+            BigInteger price = getTypeBPrice(neoCliJsonRPCUrl, hashORACLE, anchor);
+            sar.Add("price",price.ToString());
+            return sar;
         }
 
         public JArray getGlobalBalance(string mongodbConnStr,string mongodbDatabase, string address) {
