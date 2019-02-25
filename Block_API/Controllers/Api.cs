@@ -850,11 +850,11 @@ namespace NEO_Block_API.Controllers
                         if (req.@params.Count() == 2)
                         {
                             addr = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            //string assetId = req.@params[1].ToString();
 
-                            findFliter = "{status:1,addr:'" + addr + "',asset:'" + assetId + "'}";
-                            result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter);
-                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, hashORACLE);
+                            //findFliter = "{status:1,addr:'" + addr + "',asset:'" + assetId + "'}";
+                            //result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter);
+                            result = bu.processSingleSAR4BDetail(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, addr,hashSAR4B, hashORACLE);
                         }
                         break;
                     case "getsar4ccount":

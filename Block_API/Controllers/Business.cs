@@ -481,7 +481,7 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        public JArray processSAR4BDetail(JArray arrs, string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSAR4B, string hashORACLE)
+        public JArray processSAR4BDetail(JArray arrs, string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string hashSAR4B, string hashORACLE)
         {
             JArray ret = new JArray();
 
@@ -1064,6 +1064,36 @@ namespace Block_API.Controllers
                     o.Add("value", decimal.Parse(config.ToString()));
                     result.Add(o);
                 }
+            }
+            return result;
+        }
+
+        public JArray processSingleSAR4BDetail(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string addr, string hashSAR4B, string hashORACLE)
+        {
+            JArray result = new JArray();
+            //直接判断合约里面有没有SAR
+            string script = invokeScript(new Hash160(hashSAR4B), "getSAR4B", "(addr)" + addr);
+            JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+
+            JArray adds = new JArray();
+            JObject sarDetail = new JObject();
+            //stack arrays
+            string type = (string)((JArray)jo["stack"])[0]["type"];
+            if (type == "Array")
+            {
+                JArray sar = (JArray)((JArray)jo["stack"])[0]["value"];
+                if (sar != null)
+                {
+                    string ownerValue = (string)sar[3]["value"];
+                    string owner = ThinNeo.Helper.GetAddressFromScriptHash(ThinNeo.Helper.HexString2Bytes(ownerValue));
+                    sarDetail.Add("addr", owner);
+                    adds.Add(sarDetail);
+
+                    result = processSAR4BDetail(adds, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, hashORACLE);
+                }
+            }
+            else if (type == "ByteArray") {
+
             }
             return result;
         }
