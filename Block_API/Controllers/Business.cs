@@ -986,7 +986,7 @@ namespace Block_API.Controllers
             {
                 if (key == "")
                 {
-                    BigInteger neoPrice =  getTypeBPrice(neoCliJsonRPCUrl,hashORACLE,"neo_price");
+                    BigInteger neoPrice =  getTypeBPrice(neoCliJsonRPCUrl,hashORACLE,"sneo_price");
                     JObject o = new JObject();
                     o.Add("key","neo_price");
                     o.Add("value",decimal.Parse(neoPrice.ToString())/EIGHT_ZERO);
