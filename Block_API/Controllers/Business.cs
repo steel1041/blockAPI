@@ -657,6 +657,7 @@ namespace Block_API.Controllers
                         gl.Add("value",value);
                         gl.Add("price", price);
                         gl.Add("symbol","NEO");
+                        gl.Add("type", "global");
                     }
                     else if (assetType == GAS_ASSET)
                     {
@@ -668,8 +669,8 @@ namespace Block_API.Controllers
                         gl.Add("value", value);
                         gl.Add("price", price);
                         gl.Add("symbol", "GAS");
+                        gl.Add("type", "global");
                     }
-                    gl.Add("type", "global");
                     ret.Add(gl);
                 }
 
