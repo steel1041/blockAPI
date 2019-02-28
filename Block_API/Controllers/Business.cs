@@ -658,6 +658,7 @@ namespace Block_API.Controllers
                         gl.Add("price", price);
                         gl.Add("symbol","NEO");
                         gl.Add("type", "global");
+                        ret.Add(gl);
                     }
                     else if (assetType == GAS_ASSET)
                     {
@@ -670,8 +671,8 @@ namespace Block_API.Controllers
                         gl.Add("price", price);
                         gl.Add("symbol", "GAS");
                         gl.Add("type", "global");
+                        ret.Add(gl);
                     }
-                    ret.Add(gl);
                 }
 
             }catch (Exception e) {
@@ -694,7 +695,7 @@ namespace Block_API.Controllers
 
                     if (assetid == hashSNEO)
                     {
-                        BigInteger neoPrice = getTypeBPrice(neoCliJsonRPCUrl, hashORACLE, "neo_price");
+                        BigInteger neoPrice = getTypeBPrice(neoCliJsonRPCUrl, hashORACLE, "sneo_price");
                         price = decimal.Parse(neoPrice.ToString()) / EIGHT_ZERO;
                     }
                     else if (assetid == hashSDS)
@@ -1139,6 +1140,32 @@ namespace Block_API.Controllers
 
             }
             return result;
+        }
+
+        public JArray getUsableUtxoForNEO(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string hashSNEO)
+        {
+            string addr = ThinNeo.Helper.GetAddressFromScriptHash(new Hash160(hashSNEO));
+            string findFliter = "{addr:'" + addr+ "',asset:'0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b',used:''}";
+
+            //查询合约地址NEO
+            JArray utxos = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
+            JArray ret = new JArray();
+
+            foreach (JObject utxo in utxos) {
+                string txid = (string)utxo["txid"];
+                int n = (int)utxo["n"];
+                if (n > 0) continue;
+
+                //只有区块里面无记录的才符合要求
+                string script = invokeScript(new Hash160(hashSNEO), "getRefundTarget", "(hex256)"+txid);
+                JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                string value = (string)((JArray)jo["stack"])[0]["value"];
+                if (value.Length == 0 || value == "")
+                {
+                    ret.Add(utxo);
+                }
+            }
+            return ret;
         }
     }
 }

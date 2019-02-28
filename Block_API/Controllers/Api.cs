@@ -1202,6 +1202,12 @@ namespace NEO_Block_API.Controllers
                             result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, "", "");
                         }
                         break;
+                    case "getUsableUtxoForNEO":
+                        if (req.@params.Count() == 1)
+                        {
+                            result = bu.getUsableUtxoForNEO(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSNEO);
+                        }
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
