@@ -1205,8 +1205,9 @@ namespace NEO_Block_API.Controllers
                     case "getUsableUtxoForNEO":
                         if (req.@params.Count() == 1)
                         {
-                            result = bu.getUsableUtxoForNEO(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSNEO);
+                            hashSNEO = (string)req.@params[0];
                         }
+                        result = bu.getUsableUtxoForNEO(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSNEO);
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
