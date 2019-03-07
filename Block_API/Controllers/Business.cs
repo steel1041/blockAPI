@@ -1149,20 +1149,26 @@ namespace Block_API.Controllers
 
             //查询合约地址NEO
             JArray utxos = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
-            JArray ret = new JArray();
 
+            JArray ret = new JArray();
             foreach (JObject utxo in utxos) {
                 string txid = (string)utxo["txid"];
                 int n = (int)utxo["n"];
-                if (n > 0) continue;
-
-                //只有区块里面无记录的才符合要求
-                string script = invokeScript(new Hash160(hashSNEO), "getRefundTarget", "(hex256)"+txid);
-                JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
-                string value = (string)((JArray)jo["stack"])[0]["value"];
-                if (value.Length == 0 || value == "")
+                if (n > 0)
                 {
                     ret.Add(utxo);
+                    continue;
+                }
+                else
+                {
+                    //只有区块里面无记录的才符合要求
+                    string script = invokeScript(new Hash160(hashSNEO), "getRefundTarget", "(hex256)" + txid);
+                    JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                    string value = (string)((JArray)jo["stack"])[0]["value"];
+                    if (value.Length == 0 || value == "")
+                    {
+                        ret.Add(utxo);
+                    }
                 }
             }
             return ret;
