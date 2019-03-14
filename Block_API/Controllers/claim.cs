@@ -471,8 +471,8 @@ namespace NEO_Block_API.Controllers
         {
             JObject ret = new JObject();
             bool result = false;
-            string findFliter = "{txid:'" + txid + "',n:" + n + ",status:1}";
-            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "ProClaimgas", findFliter);
+            string findFliter = "{txid:'" + txid + "',status:1}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
             if (array.Count == 0)
             {
                 ret.Add("result", result);
@@ -491,20 +491,399 @@ namespace NEO_Block_API.Controllers
 
             var client = new MongoClient(mongodbConnStr);
             var database = client.GetDatabase(mongodbDatabase);
-            var coll = database.GetCollection<ProClaimgas>("ProClaimgas");
-            BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + ",status:1}");
-            List<ProClaimgas> queryBsonList = coll.Find(queryBson).ToList();
+            var coll = database.GetCollection<NEP55.MintGas>("MintGas");
+            BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',status:1}");
+            List<NEP55.MintGas> queryBsonList = coll.Find(queryBson).ToList();
 
             if (queryBsonList.Count > 0)
             {
-                ProClaimgas pro = queryBsonList[0];
+                NEP55.MintGas pro = queryBsonList[0];
                 pro.status = 2;
-                pro.pro = DateTime.Now;
+                pro.claimTime = DateTime.Now;
+
                 coll.ReplaceOne(queryBson, pro);
                 result = true;
             }
             ret.Add("result", result);
             return ret;
+        }
+
+        //public JObject lockClaimStatus(string mongodbConnStr, string mongodbDatabase, string txid, int n)
+        //{
+        //    JObject ret = new JObject();
+        //    bool result = false;
+        //    string findFliter = "{txid:'" + txid + "',n:" + n + ",status:1}";
+        //    JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "ProClaimgas", findFliter);
+        //    if (array.Count == 0)
+        //    {
+        //        ret.Add("result", result);
+        //        return ret;
+        //    }
+
+        //    JObject txOb = (JObject)array[0];
+        //    int status = (int)txOb["status"];
+
+        //    //2:已处理
+        //    if (status == 2)
+        //    {
+        //        ret.Add("result", result);
+        //        return ret;
+        //    }
+
+        //    var client = new MongoClient(mongodbConnStr);
+        //    var database = client.GetDatabase(mongodbDatabase);
+        //    var coll = database.GetCollection<ProClaimgas>("ProClaimgas");
+        //    BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + ",status:1}");
+        //    List<ProClaimgas> queryBsonList = coll.Find(queryBson).ToList();
+
+        //    if (queryBsonList.Count > 0)
+        //    {
+        //        ProClaimgas pro = queryBsonList[0];
+        //        pro.status = 2;
+        //        pro.pro = DateTime.Now;
+        //        coll.ReplaceOne(queryBson, pro);
+        //        result = true;
+        //    }
+        //    ret.Add("result", result);
+        //    return ret;
+        //}
+
+        internal JArray getClaimGasGroup(string mongodbConnStr, string mongodbDatabase)
+        {
+            string findFliter = "{}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
+
+            Dictionary<string, decimal> balance = new Dictionary<string, decimal>();
+            foreach (JObject j in array)
+            {
+                if (!balance.ContainsKey((string)j["from"]))
+                {
+                    balance.Add((string)j["from"], (decimal)j["gas"]);
+                }
+                else
+                {
+                    balance[(string)j["from"]] += (decimal)j["gas"];
+                }
+            }
+            JArray balanceJA = new JArray();
+            foreach (KeyValuePair<string, decimal> kv in balance)
+            {
+                JObject j = new JObject();
+                j.Add("addr", kv.Key);
+                j.Add("gas", kv.Value);
+                balanceJA.Add(j);
+            }
+
+            return balanceJA;
+        }
+
+        internal JObject getSendGas(string mongodbConnStr, string mongodbDatabase,string addr)
+        {
+            JObject ret = new JObject();
+            string findFliter = "{addr:'" + addr + "'}";
+
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "address_tx",findFliter);
+
+            Dictionary<string, decimal> balance = new Dictionary<string, decimal>();
+            foreach (JObject ob in result) {
+                string txid = (string)ob["txid"];
+                balance = processGasTransfer(mongodbConnStr,mongodbDatabase,txid, balance);
+            }
+            decimal gas_value = 0; //所有gas总值
+            JArray balanceJA = new JArray();
+            foreach (KeyValuePair<string, decimal> kv in balance)
+            {
+                JObject j = new JObject();
+                j.Add("addr", kv.Key);
+                j.Add("gas", kv.Value);
+                //balanceJA.Add(j);
+                gas_value += kv.Value;
+                mh.insertOne(mongodbConnStr,mongodbDatabase,"HasSendGas",j);
+            }
+            ret.Add("gas", gas_value);
+            return ret;
+        }
+
+        private Dictionary<string, decimal> processGasTransfer(string mongodbConnStr,string mongodbDatabase,string txid,Dictionary<string, decimal> balance)
+        {
+            string findFliter = "{txid:'" + txid + "',type:'ContractTransaction'}";
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx",findFliter);
+
+            if (result.Count > 0) {
+                JObject ob = (JObject)result[0];
+                JArray vouts = (JArray)ob["vout"];
+                foreach (JObject vout in vouts) {
+                    if (!balance.ContainsKey((string)vout["address"]))
+                    {
+                        balance.Add((string)vout["address"], (decimal)vout["value"]);
+                    }
+                    else
+                    {
+                        balance[(string)vout["address"]] += (decimal)vout["value"];
+                    }
+                }
+
+            }
+
+            return balance;
+            
+        }
+
+        internal JObject getGasByStatus(string mongodbConnStr, string mongodbDatabase, int status)
+        {
+            JObject ret = new JObject();
+
+            string findFliter = "{}";
+            if (status > 0)
+            {
+                findFliter = "{status:" + status + "}";
+            }
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
+
+            decimal gas_value = 0; //所有gas总值
+            foreach (JObject mint in array)
+            {
+                gas_value += (decimal)mint["gas"];
+            }
+            ret.Add("gas", gas_value);
+            return ret;
+        }
+
+        internal JObject getGasByAddr(string mongodbConnStr, string mongodbDatabase, string addr, int status)
+        {
+            JObject ret = new JObject();
+
+            string findFliter = "{from:'" + addr + "'}";
+            if (status > 0)
+            {
+                findFliter = "{from:'" + addr + "',status:" + status + "}";
+            }
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
+
+            decimal gas_value = 0; //所有gas总值
+            foreach (JObject mint in array)
+            {
+                gas_value += (decimal)mint["gas"];
+            }
+            ret.Add("gas", gas_value);
+            return ret;
+        }
+
+        public JObject calGasByHeight(string mongodbConnStr, string mongodbDatabase, int start, int end, int value)
+        {
+            JObject J = new JObject();
+           
+            J.Add("gas",getCalGas(mongodbConnStr,mongodbDatabase,start,end,value));
+            return J;
+
+        }
+
+        private decimal getCalGas(string mongodbConnStr, string mongodbDatabase, int start, int end, int value)
+        {
+            if (start >= end) return 0;
+
+            if (value <= 0) return 0;
+
+            decimal issueGas = 0;
+
+            decimal issueSysfee = mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, end) - mh.GetTotalSysFeeByBlock(mongodbConnStr, mongodbDatabase, start - 1);
+            decimal issueGasInBlock = countGas(start, end);
+
+            issueGas += (issueSysfee + issueGasInBlock) / 100000000 * value;
+            return issueGas;
+        }
+
+        public void getMintSNEO(string mongodbConnStr, string mongodbDatabase, string sneoAddr)
+        {
+            //db.tx.find({"vout.0.address":{$eq:"ASmnUjHydp5z2eDjUWnkHmQbtpm6TjMUPP"},"type":"InvocationTransaction"})
+            string findFliter = "{'vout.0.address':{$eq:'" + sneoAddr + "'},'type':'InvocationTransaction'}";
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+
+            foreach (JObject txOb in result) {
+                int blockindx = (int)txOb["blockindex"];
+                JArray vins = (JArray)txOb["vin"];
+                string txid = (string)txOb["txid"];
+                JArray vouts = (JArray)txOb["vout"];
+            
+                JObject valOb = (JObject)vouts[0];
+                int value = (int)valOb["value"];
+
+                if (vins.Count > 0)
+                {
+                    //查出转入地址的交易
+                    JObject vinOb = (JObject)vins[0];
+                    txid = (string)vinOb["txid"];
+                    int n = (int)vinOb["vout"];
+
+                    findFliter = "{txid:'" + txid + "'}";
+                    JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+                    if (array.Count > 0)
+                    {
+                        JObject txOb2 = (JObject)array[0];
+                        vouts = (JArray)txOb2["vout"];
+                        if (vouts.Count > 0)
+                        {
+                            //查出转入地址的交易
+                            JObject voutOb = (JObject)vouts[n];
+                            string from = (string)voutOb["address"];
+
+                            if(!getMintSNEOByTxid(mongodbConnStr, mongodbDatabase, txid))
+                            {
+                                var client = new MongoClient(mongodbConnStr);
+                                var database = client.GetDatabase(mongodbDatabase);
+                                NEP55.MintSNEO mint = new NEP55.MintSNEO(blockindx, txid, from, sneoAddr, value, GetBlockTime(mongodbConnStr, mongodbDatabase, blockindx));
+                                var collectionPro = database.GetCollection<NEP55.MintSNEO>("MintSNEO");
+                                collectionPro.InsertOne(mint);
+                            }
+                        }
+
+                    }
+                }
+            }
+            
+        }
+
+        public void getRefundGas(string mongodbConnStr, string mongodbDatabase, string sneoAddr)
+        {
+            //首先查出所有refund记录
+            string findFliter = "{}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "operated4C", findFliter);
+            Console.WriteLine("***operated4C***");
+            foreach (JObject ob in arrays)
+            {
+                string addr = (string)ob["addr"];
+                string txid = (string)ob["txid"];
+                int n = (int)ob["n"];
+                int refundVal = (int)ob["value"];
+                int endHeigth = (int)ob["blockindex"];
+
+                //查询MintGAS是否存在，如果有就不处理
+                if (!getMintGasByTxid(mongodbConnStr, mongodbDatabase, txid)) {
+                    Console.WriteLine("***addr***" + addr + "/txid***" + txid);
+                    //取值没问题才进行入库
+                    int startHeight = getStartHeight(mongodbConnStr,mongodbDatabase,refundVal,addr);
+                    Console.WriteLine("***startHeight***"+ startHeight);
+                    Thread.Sleep(50);
+                    if (startHeight > 0) {
+                        var client = new MongoClient(mongodbConnStr);
+                        var database = client.GetDatabase(mongodbDatabase);
+
+                        //计算gas
+                        decimal gas = getCalGas(mongodbConnStr,mongodbDatabase,startHeight,endHeigth,refundVal);
+                        NEP55.MintGas mint = new NEP55.MintGas(startHeight,endHeigth,txid,addr,refundVal,gas,DateTime.Now);
+                        var collectionPro = database.GetCollection<NEP55.MintGas>("MintGas");
+                        collectionPro.InsertOne(mint);
+                    }
+                }
+            }
+
+        }
+
+        private int getStartHeight(string mongodbConnStr, string mongodbDatabase, int refundVal,string addr)
+        {
+            //地址下面所有未使用的兑换记录
+            JArray mints = getMintSNEOByAddr(mongodbConnStr,mongodbDatabase,addr);
+
+            if (mints.Count == 0) return 0;
+
+            //默认第一个就是开始高度
+            JObject firstOb = (JObject)mints[0];
+            int remainTotal = 0;
+            
+            Console.WriteLine("mintsneo size:" + mints.Count);
+            //记录使用被匹配的兑换记录
+            List<NEP5.MintSNEOTemp> temps = new List<NEP5.MintSNEOTemp>();
+            foreach (JObject mint in mints) {
+                int remainVal = (int)mint["remainVal"];
+                string txid = (string)mint["txid"];
+                int blockindex = (int)mint["blockindex"];
+
+                remainTotal = remainTotal + remainVal;
+
+                int result = remainTotal - refundVal;
+                if (result <= 0)
+                {
+                    NEP5.MintSNEOTemp temp = new NEP5.MintSNEOTemp(addr, txid, 0);
+                    temps.Add(temp);
+                }
+                else {
+                    NEP5.MintSNEOTemp temp = new NEP5.MintSNEOTemp(addr, txid, result);
+                    temps.Add(temp);
+                    break;
+                }
+            }
+
+            //更新MintSNEO记录
+            foreach (NEP5.MintSNEOTemp temp in temps)
+            {
+                string txid = temp.txid;
+                int remainVal = temp.remainVal;
+
+                Console.WriteLine("txid:"+txid+ "/remainVal:"+ remainVal);
+                var client = new MongoClient(mongodbConnStr);
+                var database = client.GetDatabase(mongodbDatabase);
+                var coll = database.GetCollection<BsonDocument>("MintSNEO");
+                BsonDocument queryBson = BsonDocument.Parse("{from:'" + addr + "',txid:'" + txid + "'}");
+
+                var collBson = database.GetCollection<NEP55.MintSNEO>("MintSNEO");
+                List<NEP55.MintSNEO> query = collBson.Find(queryBson).ToList();
+                
+                NEP55.MintSNEO oper = query[0];
+                oper.remainVal = remainVal;
+
+                collBson.ReplaceOne(queryBson, oper);
+            }
+
+            return (int)firstOb["blockindex"];
+        }
+
+
+        private Boolean getMintSNEOByTxid(string mongodbConnStr, string mongodbDatabase,string txid)
+        {
+            string findFliter = "{txid:'"+txid+"'}";
+            long num = mh.GetDataCount(mongodbConnStr, mongodbDatabase, "MintSNEO", findFliter);
+            if (num > 0) return true;
+            return false;
+        }
+
+        private JObject getSinMintSNEOByTxid(string mongodbConnStr, string mongodbDatabase, string txid)
+        {
+            string findFliter = "{txid:'" + txid + "'}";
+            JArray results = mh.GetData(mongodbConnStr, mongodbDatabase, "MintSNEO", findFliter);
+            
+            return (JObject)results[0];
+        }
+
+        private Boolean getMintGasByTxid(string mongodbConnStr, string mongodbDatabase, string txid)
+        {
+            string findFliter = "{txid:'"+txid+"'}";
+            long num = mh.GetDataCount(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
+            if (num > 0) return true;
+            return false;
+        }
+
+        private JArray getMintSNEOByAddr(string mongodbConnStr, string mongodbDatabase, string addr)
+        {
+            //根据地址查询remainVal大于0，默认按照升序排序
+            string findFliter = "{'from':'" + addr + "','remainVal':{ $gt:'0'}}";
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "MintSNEO", findFliter);
+            return result;
+
+        }
+
+        private static DateTime GetBlockTime(string mongodbConnStr, string mongodbDatabase,int blockindex)
+        {
+            //获取block时间（本地时区时区）
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collBlock = database.GetCollection<BsonDocument>("block");
+            var queryBlock = collBlock.Find("{index:" + blockindex + "}").Project("{time:1}").ToList()[0];
+            int blockTimeTS = queryBlock["time"].AsInt32;
+            DateTime blockTime = TimeZoneInfo.ConvertTime(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc), TimeZoneInfo.Local).AddSeconds(blockTimeTS);
+
+            client = null;
+
+            return blockTime;
         }
 
         private string DecimalToString(decimal d)

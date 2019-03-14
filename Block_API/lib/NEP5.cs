@@ -38,6 +38,19 @@ namespace NEO_Block_API
             public string balance { get; set; }
         }
 
+        public class MintSNEOTemp
+        {
+            public MintSNEOTemp(string Addr,string Txid,int RemainVal)
+            {
+                addr = Addr;
+                txid = Txid;
+                remainVal = RemainVal;
+            }
+            public string addr { get; set; }
+            public string txid { get; set; }
+            public int remainVal { get; set; }
+        }
+
         [BsonIgnoreExtraElements]
         public class Asset
         {

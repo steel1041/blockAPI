@@ -340,6 +340,61 @@ namespace NEO_Block_API.Controllers
                         };
                         result = getJAbyJ(claimsJ);
                         break;
+                    case "calGasByHeight":
+                        claimsJ = new JObject();
+                        if (req.@params.Count() == 3)
+                        {
+                            claimsJ = claim.calGasByHeight(mongodbConnStr, mongodbDatabase, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()));
+                        };
+                        result = getJAbyJ(claimsJ);
+                        break;
+                    case "getMintSNEO":
+                        addr = (string)req.@params[0];
+                        claim.getMintSNEO(mongodbConnStr,mongodbDatabase, addr);
+                        result = getJAbyKV("result","true");
+                        break;
+                    case "getRefundGas":
+                        addr = (string)req.@params[0];
+                        claim.getRefundGas(mongodbConnStr, mongodbDatabase, addr);
+                        result = getJAbyKV("result", "true");
+                        break;
+                    case "getGasByAddr":
+                        if (req.@params.Count() == 2)
+                        {
+                            //根据状态地址的gas
+                            addr = req.@params[0].ToString();
+                            int status = int.Parse(req.@params[1].ToString());
+                            result = getJAbyJ(claim.getGasByAddr(mongodbConnStr, mongodbDatabase,addr, status));
+                        }
+                        else if (req.@params.Count() == 1)
+                        {
+                            //地址的总计gas
+                            addr = req.@params[0].ToString();
+                            result = getJAbyJ(claim.getGasByAddr(mongodbConnStr, mongodbDatabase,addr, 0));
+                        }
+                        else {
+                            //地址的所有gas，按照地址分组
+                            result = claim.getClaimGasGroup(mongodbConnStr, mongodbDatabase);
+                        }
+                        break;
+                    case "getGasByStatus":
+                        if (req.@params.Count() == 1)
+                        {
+                            //根据状态地址的gas
+                            int status = int.Parse(req.@params[0].ToString());
+                            result = getJAbyJ(claim.getGasByStatus(mongodbConnStr, mongodbDatabase,status));
+                        }
+                        else
+                        {
+                            //地址的总计gas
+                            addr = req.@params[0].ToString();
+                            result = getJAbyJ(claim.getGasByStatus(mongodbConnStr, mongodbDatabase, 0));
+                        }
+                        break;
+                    case "getSendGas":
+                        addr = req.@params[0].ToString();
+                        result = getJAbyJ(claim.getSendGas(mongodbConnStr, mongodbDatabase, addr));
+                        break;
                     case "getclaimtxhex":
                         string addrClaim = (string)req.@params[0];
                         JObject claimgasJ = claim.getClaimGas(mongodbConnStr, mongodbDatabase, addrClaim);
@@ -351,36 +406,9 @@ namespace NEO_Block_API.Controllers
                         {
                             result = getJAbyKV("claimtxhex", tx.getClaimTxHex(addrClaim, claimgasJ));
                         }
-
                         break;
                     case "getbalance":
                         addr = (string)req.@params[0];
-                        //findFliter = "{addr:'" + req.@params[0] + "',used:''}";
-                        //JArray utxos = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
-                        //Dictionary<string, decimal> balance = new Dictionary<string, decimal>();
-                        //foreach (JObject j in utxos)
-                        //{
-                        //    if (!balance.ContainsKey((string)j["asset"]))
-                        //    {
-                        //        balance.Add((string)j["asset"], (decimal)j["value"]);
-                        //    }
-                        //    else
-                        //    {
-                        //        balance[(string)j["asset"]] += (decimal)j["value"];
-                        //    }
-                        //}
-                        //JArray balanceJA = new JArray();
-                        //foreach (KeyValuePair<string, decimal> kv in balance)
-                        //{
-                        //    JObject j = new JObject();
-                        //    j.Add("asset", kv.Key);
-                        //    j.Add("balance", kv.Value);
-                        //    JObject asset = (JObject)mh.GetData(mongodbConnStr, mongodbDatabase, "asset", "{id:'" + kv.Key + "'}")[0];
-                        //    JArray name = (JArray)asset["name"];
-                        //    j.Add("name", name);
-                        //    balanceJA.Add(j);
-                        //}
-                        //result = balanceJA;
                         result = bu.getGlobalBalance(mongodbConnStr, mongodbDatabase,addr);
                         break;
                     case "getcontractscript":

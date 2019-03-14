@@ -351,6 +351,57 @@ namespace NEO_Block_API
             }
         }
 
+        [BsonIgnoreExtraElements]
+        public class MintSNEO
+        {
+            public MintSNEO(int Blockindex, string Txid,string From,string To,int Value, DateTime time)
+            {
+                blockindex = Blockindex;
+                txid = Txid;
+                from = From;
+                to = To;
+                blocktime = time;
+                value = Value;
+                remainVal = Value;
+            }
+            public ObjectId _id { get; set; }
+            public int blockindex { get; set; }
+            public string from { get; set; }
+            public string to { get; set; }
+            public string txid { get; set; }
+            public decimal value { get; set; }
+            public decimal remainVal { get; set; }
+            public DateTime blocktime { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class MintGas
+        {
+            public MintGas(int Startindex,int Endindex, string Txid, string From,int Value,decimal Gas,DateTime time)
+            {
+                startindex = Startindex;
+                endindex = Endindex;
+                txid = Txid;
+                from = From;
+                blocktime = time;
+                value = Value;
+                gas = Gas;
+                status = 1;
+                claimTime = time;
+            }
+            public ObjectId _id { get; set; }
+            public int startindex { get; set; }
+            public int endindex { get; set; }
+            public string from { get; set; }
+            public string txid { get; set; }
+            public decimal value { get; set; }
+            public decimal gas { get; set; }
+            public int status { get; set; }
+            public DateTime blocktime { get; set; }
+            public DateTime claimTime { get; set; }
+        }
+
+
         private static string getAddrFromScriptHash(string scripitHash)
         {
             if (scripitHash != string.Empty)
