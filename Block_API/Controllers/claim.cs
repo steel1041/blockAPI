@@ -251,6 +251,147 @@ namespace NEO_Block_API.Controllers
             return result;
         }
 
+        internal JArray getMintGasData(string mongodbConnStr, string mongodbDatabase, int status)
+        {
+            string findFliter = "{status:" + status + "}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "MintGas", findFliter);
+            Console.WriteLine("**array**");
+
+            JArray result = new JArray();
+            //未发放的需要处理
+            if (status == 1)
+            {
+                //去掉已经发放的地址，并且更新为已发放
+                foreach (JObject ob in array)
+                {
+                    string addr = (string)ob["from"];
+                    decimal gas = (decimal)ob["gas"];
+                    string txid = (string)ob["txid"];
+                    Console.WriteLine("**addr**"+addr+"/txid:"+txid);
+                    if (gas > 0)
+                    {
+                        decimal needSendGas = processNeedSend(mongodbConnStr, mongodbDatabase, addr, gas);
+                        //只有大于0才进行发放
+                        if (needSendGas > 0)
+                        {
+                            JObject newOb = new JObject();
+                            newOb.Add("gas", needSendGas.ToString());
+                            newOb.Add("txid", txid);
+                            newOb.Add("addr", addr);
+                            result.Add(newOb);
+                        }
+                        else
+                        {
+                            //发放记录进行改掉 已发放
+                            updateMintGasStatus(mongodbConnStr, mongodbDatabase, txid);
+                        }
+                    }
+                    else
+                    {
+                        //gas==0的 已经有发放记录的也改成已发放
+                        findFliter = "{addr:'" + addr + "'}";
+                        array = mh.GetData(mongodbConnStr, mongodbDatabase, "HasSendGas", findFliter);
+                        decimal needGas = gas;
+                        Console.WriteLine("**addr**" + addr + "/gas:" + gas);
+
+                        if (array != null && array.Count > 0)
+                        {
+                            JObject ob2 = (JObject)array[0];
+                            decimal remainGas = (decimal)ob2["gas"];
+                            if (remainGas > 0)
+                            {
+                                updateMintGasStatus(mongodbConnStr, mongodbDatabase, txid);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                result = array;
+            }
+            return result;
+        }
+
+        private decimal processNeedSend(string mongodbConnStr, string mongodbDatabase, string addr, decimal gas)
+        {
+            //当前可发放记录和已发放记录比对，如果已发放有记录，则减去当前值
+            string findFliter = "{addr:'" + addr + "'}";
+            JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "HasSendGas", findFliter);
+            JObject ob = new JObject();
+            decimal needGas = gas;
+            Console.WriteLine("**addr**" + addr + "/gas:" + gas);
+
+            if (array != null && array.Count > 0)
+            {
+                ob = (JObject)array[0];
+                decimal remainGas = (decimal)ob["gas"];
+                if (remainGas > 0) {
+                    if (remainGas - gas >= 0)
+                    {
+                        needGas = 0;
+                        updateHasSendGas(mongodbConnStr, mongodbDatabase, addr, remainGas - gas);
+                        Console.WriteLine("**updateDataByKey01**");
+                    }
+                    else {
+                        needGas = gas - remainGas;
+                        updateHasSendGas(mongodbConnStr, mongodbDatabase,addr,0);
+                        Console.WriteLine("**updateDataByKey02**");
+                    }
+                }
+            }
+            return needGas;
+        }
+
+        private void updateHasSendGas(string mongodbConnStr, string mongodbDatabase, string addr,decimal value)
+        {
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var coll = database.GetCollection<NEP55.HasSendGas>("HasSendGas");
+            BsonDocument queryBson = BsonDocument.Parse("{addr:'" + addr + "'}");
+            List<NEP55.HasSendGas> queryBsonList = coll.Find(queryBson).ToList();
+
+            if (queryBsonList.Count > 0)
+            {
+                NEP55.HasSendGas pro = queryBsonList[0];
+                pro.gas = value;
+                coll.ReplaceOne(queryBson, pro);
+            }
+        }
+
+
+        private void updateMintGasStatus(string mongodbConnStr, string mongodbDatabase, string txid) {
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var coll = database.GetCollection<NEP55.MintGas>("MintGas");
+            BsonDocument queryBson = BsonDocument.Parse("{txid:'" + txid + "',status:1}");
+            List<NEP55.MintGas> queryBsonList = coll.Find(queryBson).ToList();
+
+            if (queryBsonList.Count > 0)
+            {
+                NEP55.MintGas pro = queryBsonList[0];
+                pro.status = 2;
+                pro.claimTime = DateTime.Now;
+
+                coll.ReplaceOne(queryBson, pro);
+            }
+        }
+
+        //private void updateHasSendGas(string mongodbConnStr, string mongodbDatabase, string addr, decimal gas)
+        //{
+        //    string findFliter = "{addr:" + addr + "}";
+        //    JArray array = mh.GetData(mongodbConnStr, mongodbDatabase, "HasSendGas", findFliter);
+        //    JObject ob = new JObject();
+        //    if (array.Count > 0)
+        //    {
+        //        ob = (JObject)array[0];
+        //        decimal remainGas = (decimal)ob["gas"];
+        //        if (remainGas >= 0)
+        //        {
+                    
+        //        }
+        //    }
+        //}
+
         public JObject claimContract(string mongodbConnStr, string mongodbDatabase, string conAddr, string addrClaim, string url, string hash)
         {
             JObject claimGas = getClaimGas(mongodbConnStr, mongodbDatabase, conAddr, true);

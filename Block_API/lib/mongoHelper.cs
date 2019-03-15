@@ -286,7 +286,7 @@ namespace NEO_Block_API.lib
 
             string strData = Newtonsoft.Json.JsonConvert.SerializeObject(Jdata);
             BsonDocument bson = BsonDocument.Parse(strData);
-            bson.Add("updateTime", DateTime.Now);
+            //bson.Add("updateTime", DateTime.Now);
 
             UpdateResult result = collection.UpdateOne("{'" + key + "':'" + value + "'}", "{$set:"+bson+"}");
             if (result.ModifiedCount > 0 || result.MatchedCount > 0)

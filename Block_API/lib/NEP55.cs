@@ -401,6 +401,19 @@ namespace NEO_Block_API
             public DateTime claimTime { get; set; }
         }
 
+        [BsonIgnoreExtraElements]
+        public class HasSendGas
+        {
+            public HasSendGas(string Addr,decimal Gas)
+            {
+                addr = Addr;
+                gas = Gas;
+            }
+            public ObjectId _id { get; set; }
+            public string addr { get; set; }
+            public decimal gas { get; set; }
+        }
+
 
         private static string getAddrFromScriptHash(string scripitHash)
         {
