@@ -649,7 +649,7 @@ namespace Block_API.Controllers
                     decimal balance = (decimal)global["balance"];
                     if (assetType == NEO_ASSET)
                     {
-                        BigInteger neoPrice = getTypeBPrice(neoCliJsonRPCUrl, hashORACLE, "neo_price");
+                        BigInteger neoPrice = getTypeBPrice(neoCliJsonRPCUrl, hashORACLE, "sneo_price");
                         decimal price =  decimal.Parse(neoPrice.ToString()) / EIGHT_ZERO;
                         decimal value = balance * price;
                         gl.Add("assetid", assetType);
