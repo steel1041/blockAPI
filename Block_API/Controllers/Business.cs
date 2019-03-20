@@ -467,6 +467,7 @@ namespace Block_API.Controllers
                             sarDetail.Add("mortgageRate", "0");
                             sarDetail.Add("liqPrice", "0");
                             sarDetail.Add("status", 1);
+                            sarDetail.Add("toPay", "0");
 
                         }
                         ret.Add(sarDetail);
@@ -1172,6 +1173,36 @@ namespace Block_API.Controllers
                 }
             }
             return ret;
+        }
+
+        internal JArray transferSNEOdata(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, int num)
+        {
+            JObject ret = new JObject();
+            ret.Add("result",true);
+
+            string addr = "AWFSdehLUrvGP34G7WKgjcWGriBLGxvi42";
+            JArray results = new JArray();
+
+            string findTransferTo = "{ asset:'0xa2aeccd6a7a7808b9959866f5463e5dcb911a578'}";
+            JArray transferToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5transfer", findTransferTo);
+
+            foreach (JObject tfJ in transferToJA)
+            {
+               string from = (string)tfJ["from"];
+               string to = (string)tfJ["to"];
+               decimal value = (decimal)tfJ["value"];
+               //过滤掉合约操作转账，以及转入和转出
+               if (from.Length > 0 && to.Length > 0 && from != addr && to != addr)
+               {
+                    if (num > 0 && value > decimal.Parse(num+""))
+                    {
+                        results.Add(tfJ);
+                    }
+               }
+            }
+            Console.WriteLine("size:"+results.Count);
+            return results;
+
         }
     }
 }

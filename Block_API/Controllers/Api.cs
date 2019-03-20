@@ -1237,6 +1237,11 @@ namespace NEO_Block_API.Controllers
                         }
                         result = bu.getUsableUtxoForNEO(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSNEO);
                         break;
+                    case "testLostData":
+                        int mount = int.Parse((string)req.@params[0]);
+                        result = bu.transferSNEOdata(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, mount);
+                        break;
+
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
