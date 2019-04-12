@@ -1204,5 +1204,26 @@ namespace Block_API.Controllers
             return results;
 
         }
+
+        public JArray processSARFilterByRate(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string hashSAR4C,string hashORACLE,decimal start,decimal end)
+        {
+            if (start.CompareTo(0)<=0 || end.CompareTo(0) <= 0 || start.CompareTo(end)>0) return new JArray();
+
+            JArray result = mh.GetData(mongodbConnStr,mongodbDatabase,"SAR4C", "{status:1}");
+
+            JArray sarList = processSARDetail(result,mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C,hashORACLE);
+
+            JArray retList = new JArray();
+
+            foreach (JObject sar in sarList) {
+                decimal rate = (decimal)sar["mortgageRate"];
+                if (start.CompareTo(rate) <= 0 && end.CompareTo(rate) >= 0) {
+                    retList.Add(sar);
+                }
+            }
+
+            return retList;
+        }
+
     }
 }

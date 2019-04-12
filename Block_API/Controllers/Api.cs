@@ -1241,6 +1241,12 @@ namespace NEO_Block_API.Controllers
                         int mount = int.Parse((string)req.@params[0]);
                         result = bu.transferSNEOdata(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, mount);
                         break;
+                    case "processSARFilterByRate":
+                        decimal start = decimal.Parse(req.@params[0].ToString());
+                        decimal end = decimal.Parse(req.@params[1].ToString());
+
+                        result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C,hashORACLE,start,end);
+                        break;
 
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
