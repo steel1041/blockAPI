@@ -1225,5 +1225,129 @@ namespace Block_API.Controllers
             return retList;
         }
 
+        internal JObject predictFeeTotal(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSAR4C, string hashORACLE)
+        {
+           JObject ret = new JObject();
+            //所有有效状态的SAR
+           string findFliter = "{status:1,asset:'" + hashSAR4C + "'}";
+            
+           JArray arrs = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter);
+
+            BigInteger feeTotal = new BigInteger(0);
+            foreach (JObject ob in arrs)
+            {
+                string addr = (string)ob["addr"];
+                if (!string.IsNullOrEmpty(addr))
+                {
+                    try
+                    {
+                        string script = invokeScript(new Hash160(hashSAR4C), "getSAR4C", "(addr)" + addr);
+                        JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                        //JObject sarDetail = new JObject();
+                        //stack arrays
+                        string type = (string)((JArray)jo["stack"])[0]["type"];
+                        JArray sar = (JArray)((JArray)jo["stack"])[0]["value"];
+
+                        //SAR地址
+                        string ownerValue = (string)sar[0]["value"];
+                        string owner = ThinNeo.Helper.GetAddressFromScriptHash(ThinNeo.Helper.HexString2Bytes(ownerValue));
+                        //sarDetail.Add("owner", owner);
+                        //Console.WriteLine("owner:" + owner);
+                        //创建SAR的txid
+                        string txidValue = (string)sar[1]["value"];
+                        string txid = "0x" + ThinNeo.Helper.Bytes2HexString(ThinNeo.Helper.HexString2Bytes(txidValue).Reverse().ToArray());
+                        //sarDetail.Add("txid", txid);
+                        //Console.WriteLine("txid:" + txid);
+
+                        //hasLocked
+                        type = (string)sar[2]["type"];
+                        string value = (string)sar[2]["value"];
+                        string lockedSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        string locked = NEP5.getNumStrFromStr(type, value, 8);
+                        //sarDetail.Add("locked", locked);
+                        //Console.WriteLine("locked:" + locked);
+
+                        //hasDrawed
+                        type = (string)sar[3]["type"];
+                        value = (string)sar[3]["value"];
+                        string hasDrawedSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        string hasDrawed = NEP5.getNumStrFromStr(type, value, 8);
+                        //sarDetail.Add("hasDrawed", hasDrawed);
+                        //Console.WriteLine("hasDrawed:" + hasDrawed);
+
+                        //资产类型
+                        type = (string)sar[4]["type"];
+                        value = (string)sar[4]["value"];
+                        string assetType = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
+                        //sarDetail.Add("assetType", assetType);
+                        //Console.WriteLine("assetType:" + assetType);
+
+
+                        //bondLocked
+                        type = (string)sar[6]["type"];
+                        value = (string)sar[6]["value"];
+                        string bondLocked = NEP5.getNumStrFromStr(type, value, 8);
+                        //sarDetail.Add("bondLocked", bondLocked);
+                        //Console.WriteLine("bondLocked:" + bondLocked);
+
+                        //bondDrawed
+                        //type = (string)sar[7]["type"];
+                        //value = (string)sar[7]["value"];
+                        //string bondDrawed = NEP5.getNumStrFromStr(type, value, 8);
+                        //sarDetail.Add("bondDrawed", bondDrawed);
+                        //Console.WriteLine("bondDrawed:" + bondDrawed);
+
+                        //lastHeight
+                        type = (string)sar[8]["type"];
+                        value = (string)sar[8]["value"];
+                        string lastHeight = NEP5.getNumStrFromStr(type, value, 0);
+                        //sarDetail.Add("lastHeight", lastHeight);
+                        //Console.WriteLine("lastHeight:" + lastHeight);
+
+                        //fee
+                        type = (string)sar[9]["type"];
+                        value = (string)sar[9]["value"];
+                        string feeSrc = NEP5.getNumStrFromStr(type, value, 0);
+                        string fee = NEP5.getNumStrFromStr(type, value, 8);
+                        //sarDetail.Add("fee", fee);
+
+
+                        //计算当前抵押率
+                        if (hasDrawedSrc != "0")
+                        {
+
+                            //计算待缴手续费
+                            long blockHeight = getCurrBlock(mongodbConnStr, mongodbDatabase);
+                            BigInteger fee_rate = getTypeA(neoCliJsonRPCUrl, hashORACLE, "fee_rate_c");
+                            BigInteger sdsPrice = getSDSPrice(neoCliJsonRPCUrl, hashORACLE);
+                            if (blockHeight > BigInteger.Parse(lastHeight))
+                            {
+                                BigInteger currFee = (blockHeight - BigInteger.Parse(lastHeight)) * BigInteger.Parse(hasDrawedSrc) * fee_rate / SIXTEEN_ZERO;
+
+                                BigInteger needUSDFee = currFee + BigInteger.Parse(feeSrc);
+                                BigInteger needFee = needUSDFee * EIGHT_ZERO / sdsPrice;
+                                feeTotal = feeTotal + needFee;
+                            }
+                            else
+                            {
+                                //sarDetail.Add("toPay", "0");
+                            }
+
+                        }
+                        else
+                        {
+
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("error" + e.Message);
+                    }
+                }
+            }
+            ret.Add("feeTotal", NEP5.getNumStrFromStr("Integer", feeTotal+"",8));
+            return ret;
+        }
     }
 }

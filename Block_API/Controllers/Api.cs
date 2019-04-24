@@ -1247,6 +1247,9 @@ namespace NEO_Block_API.Controllers
 
                         result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C,hashORACLE,start,end);
                         break;
+                    case "predictFeeTotal":
+                        result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C, hashORACLE));
+                        break;
 
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
