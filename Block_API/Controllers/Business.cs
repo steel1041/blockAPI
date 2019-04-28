@@ -225,7 +225,7 @@ namespace Block_API.Controllers
             balanceStr = (string)((JArray)jo["stack"])[0]["value"];
             ob.Add("issueingCeiling", decimal.Parse(NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8)));
 
-
+            //
 
             return ob;
         }

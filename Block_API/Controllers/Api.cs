@@ -336,7 +336,7 @@ namespace NEO_Block_API.Controllers
                         claimsJ = new JObject();
                         if (req.@params.Count() == 2)
                         {
-                            claimsJ = claim.getClaimGasByTx(mongodbConnStr, mongodbDatabase, req.@params[0].ToString(),int.Parse(req.@params[1].ToString()));
+                            claimsJ = claim.getClaimGasByTx(mongodbConnStr, mongodbDatabase, ((string)req.@params[0]).formatHexStr(), int.Parse(req.@params[1].ToString()));
                         };
                         result = getJAbyJ(claimsJ);
                         break;
@@ -421,17 +421,6 @@ namespace NEO_Block_API.Controllers
                         JArray outputJA = mh.GetData(mongodbConnStr, mongodbDatabase, "utxo", findFliter);
 
                         result = getJAbyKV("transfertxhex", tx.getTransferTxHex(outputJA, (string)req.@params[0], (string)req.@params[1], (string)req.@params[2], decimal.Parse(req.@params[3].ToString(),NumberStyles.Float)));
-
-                        //result = new JArray
-                        //{
-                        //    new JObject
-                        //    {
-                        //        {
-                        //            "transfertxhex",
-                        //            tx.getTransferTxHex(outputJA,(string)req.@params[0], (string)req.@params[1], (string)req.@params[2], decimal.Parse(req.@params[3].ToString()))
-                        //        }
-                        //    }
-                        //};
                         break;
                     case "sendtxplussign":
                         result = getJAbyJ(tx.sendTxPlusSign(neoCliJsonRPCUrl, (string)req.@params[0], (string)req.@params[1], (string)req.@params[2]));
@@ -441,17 +430,6 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "sendrawtransaction":
                         result = getJAbyJ(tx.sendrawtransaction(neoCliJsonRPCUrl, (string)req.@params[0]));
-
-                        //result = new JArray
-                        //{
-                        //    new JObject
-                        //    {
-                        //        {
-                        //            "sendrawtransactionresult",
-                        //            tx.sendrawtransaction(neoCliJsonRPCUrl,(string)req.@params[0])
-                        //        }
-                        //    }
-                        //};
                         break;
                     case "getcontractstate":
                         result = getJAbyJ(ct.getContractState(neoCliJsonRPCUrl, (string)req.@params[0]));
@@ -488,43 +466,11 @@ namespace NEO_Block_API.Controllers
                     case "setcontractscript":
                         JObject J = JObject.Parse((string)req.@params[0]);
                         string hash = (string)J["hash"];
-                        //string hash = (string)req.@params[0];
-                        //J.Add("hash", hash);
-                        //J.Add("avm", (string)req.@params[1]);
-                        //J.Add("cs", (string)req.@params[2]);
-
-                        //string mapStr = (string)req.@params[3];
-                        //string abiStr = (string)req.@params[4];
-
-                        //if (mapStr != null && mapStr != string.Empty)
-                        //{
-                        //    J.Add("map", JArray.Parse((string)req.@params[3]));
-                        //}
-                        //else
-                        //{
-                        //    J.Add("map", string.Empty);
-                        //}
-
-                        //if (abiStr != null && abiStr != string.Empty)
-                        //{
-                        //    J.Add("abi", JObject.Parse((string)req.@params[4]));
-                        //}
-                        //else
-                        //{
-                        //    J.Add("abi", string.Empty);
-                        //}
 
                         J.Add("requestIP", reqAddr);
 
                         mh.InsertOneDataByCheckKey(mh.mongodbConnStr_NeonOnline, mh.mongodbDatabase_NeonOnline, "contractWarehouse", J, "hash", hash);
                         result = getJAbyKV("isSetSuccess", true);
-
-                        //result = new JArray
-                        //{
-                        //    new JObject{
-                        //        { "isSetSuccess",true }
-                        //    }
-                        //};
 
                         break;
                     case "getnep5balanceofaddress":
@@ -679,7 +625,7 @@ namespace NEO_Block_API.Controllers
     
                         break;
                     case "getSAR4BByName":
-                        string nep55_asset = (string)req.@params[0];
+                        string nep55_asset = ((string)req.@params[0]).formatHexStr();
                         nep55_name = (string)req.@params[1];
                         findFliter = "{asset:'"+ nep55_asset + "',name:'"+nep55_name+"',status:1}";
                         sortStr ="{}";
@@ -722,7 +668,7 @@ namespace NEO_Block_API.Controllers
                     case "getsarOperatedByaddr":
                         if (req.@params.Count() == 4)
                         {
-                            string sarTxid = (string)req.@params[0];
+                            string sarTxid = ((string)req.@params[0]).formatHexStr();
                             addr = (string)req.@params[1];
                             findFliter = "{sarTxid:'" + sarTxid + "',addr:'" + addr + "'}";
                             sortStr = "{}";
@@ -765,7 +711,7 @@ namespace NEO_Block_API.Controllers
                     case "getsar4COperatedBySAR":
                         if (req.@params.Count() == 3)
                         {
-                            string sarTxid = (string)req.@params[0];
+                            string sarTxid = ((string)req.@params[0]).formatHexStr();
                             findFliter = "{sarTxid:'" + sarTxid + "'}";
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedSAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
@@ -815,7 +761,7 @@ namespace NEO_Block_API.Controllers
                         else if (req.@params.Count() == 2)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                         }
                         result = getJAbyKV("sar4bcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter));
@@ -834,7 +780,7 @@ namespace NEO_Block_API.Controllers
                         if (req.@params.Count() == 4)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
 
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
@@ -859,7 +805,7 @@ namespace NEO_Block_API.Controllers
                         if (req.@params.Count() == 4)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
 
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
@@ -895,7 +841,7 @@ namespace NEO_Block_API.Controllers
                         else if (req.@params.Count() == 2)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                         }
 
@@ -915,7 +861,7 @@ namespace NEO_Block_API.Controllers
                         else if (req.@params.Count() == 4)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
 
                             findFliter = "{status:" + status + ",asset:'"+assetId+"'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
@@ -939,7 +885,7 @@ namespace NEO_Block_API.Controllers
                         else if (req.@params.Count() == 4)
                         {
                             string status = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
 
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
@@ -959,7 +905,7 @@ namespace NEO_Block_API.Controllers
                         if (req.@params.Count() == 2)
                         {
                             addr = req.@params[0].ToString();
-                            string assetId = req.@params[1].ToString();
+                            string assetId = ((string)req.@params[1]).formatHexStr();
 
                             findFliter = "{status:1,addr:'" + addr + "',asset:'"+assetId+"'}";
                             result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter);
@@ -969,7 +915,7 @@ namespace NEO_Block_API.Controllers
                     case "getOracleOperated":
                         if (req.@params.Count() == 5)
                         {
-                            assetID = (string)req.@params[0];
+                            assetID = ((string)req.@params[0]).formatHexStr();
                             addr = (string)req.@params[1];
 
                             findFliter = "{asset:'" + assetID +"',addr:'"+ addr+"',key:'" + req.@params[2].ToString() + "'}";
@@ -978,7 +924,7 @@ namespace NEO_Block_API.Controllers
                         }
                         else if (req.@params.Count() == 4)
                         {
-                            assetID = (string)req.@params[0];
+                            assetID = ((string)req.@params[0]).formatHexStr();
                             addr = (string)req.@params[1];
 
                             findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
@@ -1103,7 +1049,8 @@ namespace NEO_Block_API.Controllers
 
                         break;
                     case "getTxByTxid":
-                        findFliter = "{txid:'" + req.@params[0] + "'}";
+                        txid = ((string)req.@params[0]).formatHexStr();
+                        findFliter = "{txid:'" + txid + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
                         break;
                     case "getTx":
@@ -1173,7 +1120,7 @@ namespace NEO_Block_API.Controllers
                     case "getOperatedFeeBySARCount":
                         if (req.@params.Count() == 1)
                         {
-                            string sarTxid = (string)req.@params[0];
+                            string sarTxid = ((string)req.@params[0]).formatHexStr();
                             findFliter = "{sarTxid:'" + sarTxid + "'}";
                         }
                         else
@@ -1194,7 +1141,7 @@ namespace NEO_Block_API.Controllers
                     case "getOperatedFeeBySAR":
                         if (req.@params.Count() == 3)
                         {
-                            string sarTxid = (string)req.@params[0];
+                            string sarTxid = ((string)req.@params[0]).formatHexStr();
                             findFliter = "{sarTxid:'" + sarTxid + "'}";
                             sortStr = "{'blockindex':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
@@ -1205,13 +1152,13 @@ namespace NEO_Block_API.Controllers
                         }
                         break;
                     case "getStaticReport":
-                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD,hashSNEO,hashSAR4C,hashORACLE,addrSAR4C,oldAddrSAR4C));
+                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),addrSAR4C,oldAddrSAR4C));
                         break;
                     case "getAllassetBalance":
                         if (req.@params.Count() == 1)
                         {
                             address = (string)req.@params[0];
-                            result = bu.getAllassetBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,address, hashSAR4B, hashTokenized, hashORACLE,hashSDUSD,hashSNEO,hashSDS);
+                            result = bu.getAllassetBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,address, hashSAR4B.formatHexStr(), hashTokenized.formatHexStr(), hashORACLE.formatHexStr(),hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSDS.formatHexStr());
                         }
                         break;
                     case "getOracleConfig":
@@ -1219,23 +1166,23 @@ namespace NEO_Block_API.Controllers
                         {
                             string type = (string)req.@params[0];
                             string key = (string)req.@params[1];
-                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, type, key);
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE.formatHexStr(), type, key);
                         }
                         else if (req.@params.Count() == 1)
                         {
                             string type = (string)req.@params[0];
-                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, type, "");
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE.formatHexStr(), type, "");
                         }
                         else {
-                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE, "", "");
+                            result = bu.getOracleConfig(neoCliJsonRPCUrl, hashORACLE.formatHexStr(), "", "");
                         }
                         break;
                     case "getUsableUtxoForNEO":
                         if (req.@params.Count() == 1)
                         {
-                            hashSNEO = (string)req.@params[0];
+                            hashSNEO = ((string)req.@params[0]).formatHexStr();
                         }
-                        result = bu.getUsableUtxoForNEO(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSNEO);
+                        result = bu.getUsableUtxoForNEO(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSNEO.formatHexStr());
                         break;
                     case "testLostData":
                         int mount = int.Parse((string)req.@params[0]);
@@ -1245,10 +1192,10 @@ namespace NEO_Block_API.Controllers
                         decimal start = decimal.Parse(req.@params[0].ToString());
                         decimal end = decimal.Parse(req.@params[1].ToString());
 
-                        result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C,hashORACLE,start,end);
+                        result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),start,end);
                         break;
                     case "predictFeeTotal":
-                        result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C, hashORACLE));
+                        result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C.formatHexStr(), hashORACLE.formatHexStr()));
                         break;
 
                 }
