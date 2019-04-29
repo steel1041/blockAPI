@@ -1349,5 +1349,73 @@ namespace Block_API.Controllers
             ret.Add("feeTotal", NEP5.getNumStrFromStr("Integer", feeTotal+"",8));
             return ret;
         }
+
+        internal JArray getTxDetail(string mongodbConnStr, string mongodbDatabase, string txid)
+        {
+            JArray result = new JArray();
+            string findFliter = "{txid:'" + txid + "'}";
+            JArray arrs = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+            if (arrs.Count > 0) {
+                JObject tx = (JObject)arrs[0];
+                //InvocationTransaction、
+                string type = (string)tx["type"];
+                //根据交易类型来判断业务
+                if (type == "InvocationTransaction") {
+                    //是否有NEP5转账
+                    findFliter = "{txid:'"+txid+"'}";
+                    JArray nep5tr = mh.GetData(mongodbConnStr,mongodbDatabase, "NEP5transfer", findFliter);
+                    //JArray nep5tr2 = new JArray();
+                    foreach (JObject nep5 in nep5tr) {
+                        findFliter = "{assetid:'" + (string)nep5["asset"] + "'}";
+                        JArray assets = mh.GetData(mongodbConnStr, mongodbDatabase, "NEP5asset", findFliter);
+                        nep5.Add("name", (string)assets[0]["symbol"]);
+
+                        //nep5tr2.Add(nep5);
+                    }
+                    tx.Add("nep5",nep5tr);
+                }
+
+                //处理输入的地址显示，输出不用管
+                JArray vins = (JArray)tx["vin"];
+                //JArray vins2 = new JArray();
+                foreach(JObject vin in vins) {
+                    string vtxid = (string)vin["txid"];
+                    uint vout = (uint)vin["vout"];
+                    JObject voutOb = getVinAddr(mongodbConnStr, mongodbDatabase, vtxid, vout);
+                    vin.Add("address",(string)voutOb["address"]);
+                    vin.Add("value", (string)voutOb["value"]);
+                    vin.Add("asset",(string)voutOb["asset"]);
+                    //vins2.Add(vin);
+                }
+                //tx.Add("vin2", vins2);
+
+                //时间戳
+                findFliter = "{index:" + (uint)tx["blockindex"] + "}";
+                var time = (Int32)mh.GetData(mongodbConnStr, mongodbDatabase, "block", findFliter)[0]["time"];
+                tx.Add("time",time);
+
+                result.Add(tx);
+            }
+            return result;
+        }
+
+        private JObject getVinAddr(string mongodbConnStr, string mongodbDatabase, string vtxid, uint voutN)
+        {
+            JObject voutOb = new JObject();
+            string findFliter = "{txid:'" + vtxid + "'}";
+            JArray arrs = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
+            JObject ob = (JObject)arrs[0];
+            JArray vouts = (JArray)ob["vout"];
+            foreach (JObject vout in vouts)
+            {
+                uint n = (uint)vout["n"];
+                string address = (string)vout["address"];
+                if (n == voutN) {
+                    voutOb = vout;
+                    break;
+                }
+            }
+            return voutOb;
+        }
     }
 }

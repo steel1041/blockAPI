@@ -1053,6 +1053,11 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{txid:'" + txid + "'}";
                         result = mh.GetData(mongodbConnStr, mongodbDatabase, "tx", findFliter);
                         break;
+                    case "getTxDetail":
+                        txid = ((string)req.@params[0]).formatHexStr();
+                        findFliter = "{txid:'" + txid + "'}";
+                        result = bu.getTxDetail(mongodbConnStr, mongodbDatabase, txid);
+                        break;
                     case "getTx":
                         if (req.@params.Count() == 3)
                         {
