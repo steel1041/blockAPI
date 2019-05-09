@@ -1153,6 +1153,8 @@ namespace NEO_Block_API.Controllers
                         }
                         else
                         {
+                            findFliter = "{}";
+                            sortStr = "{}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedFee", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
@@ -1202,7 +1204,27 @@ namespace NEO_Block_API.Controllers
                     case "predictFeeTotal":
                         result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C.formatHexStr(), hashORACLE.formatHexStr()));
                         break;
-
+                        //根据地址获取所有锁仓账户信息
+                    case "getLockListByAdd":
+                        assetID = (string)req.@params[0];
+                        addr = (string)req.@params[1];
+                        result = bu.getLockListByAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID.formatHexStr(), addr);
+                        break;
+                    case "getLockHistory":
+                        if (req.@params.Count() == 3)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        }
+                        else
+                        {
+                            findFliter = "{}";
+                            sortStr = "{}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                        }
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
