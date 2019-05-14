@@ -1225,6 +1225,9 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
+                    case "statcDataProcess":
+                        result = getJAbyJ(bu.statcDataProcess(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSDUSD.formatHexStr(), hashSNEO.formatHexStr(), hashSAR4C.formatHexStr(), hashORACLE.formatHexStr(), addrSAR4C, oldAddrSAR4C));
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {

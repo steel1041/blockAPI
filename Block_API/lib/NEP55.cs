@@ -414,6 +414,41 @@ namespace NEO_Block_API
             public decimal gas { get; set; }
         }
 
+        [BsonIgnoreExtraElements]
+        public class Staticdata
+        {
+            public Staticdata(decimal SdusdTotal, decimal LockedTotal, decimal SdsFeeTotal, decimal MortgageRate, decimal PredictFeeTotal,
+                decimal NeoPrice, decimal Sdsprice, long SarCount, long SdusdCount, long SdusdTransCount,string DateKey,DateTime Now)
+            {
+                sdusdTotal = SdusdTotal;            //sdusd发行总量
+                lockedTotal = LockedTotal;          //neo抵押量
+                sdsFeeTotal = SdsFeeTotal;          //sds已收手续费
+                mortgageRate = MortgageRate;        //抵押率
+                predictFeeTotal = PredictFeeTotal;  //预计sds手续费
+                neoPrice = NeoPrice;                //neo价格，美元
+                sdsPrice = Sdsprice;                //sds价格,美元
+                sarCount = SarCount;
+                sdusdCount = SdusdCount;
+                sdusdTransCount = SdusdTransCount;
+                dateKey = DateKey;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public decimal sdusdTotal { get; set; }
+            public decimal lockedTotal { get; set; }
+            public decimal sdsFeeTotal { get; set; }
+            public decimal mortgageRate { get; set; }
+            public decimal predictFeeTotal { get; set; }
+            public decimal neoPrice { get; set; }
+            public decimal sdsPrice { get; set; }
+            public long sarCount { get; set; }
+            public long sdusdCount { get; set; }
+            public long sdusdTransCount { get; set; }
+            public string dateKey { get; set; }
+            public DateTime now { get; set; }
+
+
+        }
 
         private static string getAddrFromScriptHash(string scripitHash)
         {

@@ -12,6 +12,8 @@ using ThinNeo;
 using Microsoft.Extensions.Configuration;
 using System.Numerics;
 using NEO_Block_API.Controllers;
+using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace Block_API.Controllers
 {
@@ -1286,7 +1288,7 @@ namespace Block_API.Controllers
                         string ownerValue = (string)sar[0]["value"];
                         string owner = ThinNeo.Helper.GetAddressFromScriptHash(ThinNeo.Helper.HexString2Bytes(ownerValue));
                         //sarDetail.Add("owner", owner);
-                        //Console.WriteLine("owner:" + owner);
+                        Console.WriteLine("owner:" + owner);
                         //创建SAR的txid
                         string txidValue = (string)sar[1]["value"];
                         string txid = "0x" + ThinNeo.Helper.Bytes2HexString(ThinNeo.Helper.HexString2Bytes(txidValue).Reverse().ToArray());
@@ -1558,6 +1560,95 @@ namespace Block_API.Controllers
 
             return detail;
 
+        }
+
+        internal JObject statcDataProcess(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSDUSD, string hashSNEO, 
+            string hashSAR4C, string hashORACLE,string addrSAR4C, string oldAddrSAR4C)
+        {
+            DateTime now = DateTime.Now;
+            string date = DateTime.Now.ToString("d");
+            //2016/5/9 一天记录只能存一条
+
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var coll = database.GetCollection<NEP55.Staticdata>("Staticdata");
+            BsonDocument queryBson = BsonDocument.Parse("{dateKey:'" + date + "'}");
+            List<NEP55.Staticdata> queryBsonList = coll.Find(queryBson).ToList();
+
+            if (queryBsonList.Count > 0) return new JObject();
+
+            JObject ret = getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSDUSD.formatHexStr(), hashSNEO.formatHexStr(), hashSAR4C.formatHexStr(), hashORACLE.formatHexStr(), addrSAR4C, oldAddrSAR4C);
+
+            JObject feeRet = predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C, hashORACLE);
+
+            //sar的总数
+            string findFilter = "{status:1}";
+            long sarCount = mh.GetDataCount(mongodbConnStr, mongodbDatabase, "SAR4C", findFilter);
+
+            //sdusd的交易总数
+            string findFliter = "{asset:'" + hashSDUSD + "'}";
+            long sdusdCount = mh.GetDataCount(mongodbConnStr, mongodbDatabase, "NEP5transfer", findFliter);
+
+            //sdusd地址数
+            JArray arrs = mh.GetData(mongodbConnStr,mongodbDatabase, "NEP5transfer",findFliter);
+            List<string> addrs = new List<string>();
+            long n = 0;
+            foreach (JObject ob in arrs) {
+                string to = (string)ob["to"];
+                if (to != "" && to != null && !addrs.Contains(to)) {
+                    addrs.Add(to);
+                    string balancestr = getNep5Balance(neoCliJsonRPCUrl,hashSDUSD,to);
+                    if (balancestr != "0") {
+                        n++;
+                    }
+                }
+            }
+
+            BigInteger neoPrice = getNEOPrice(neoCliJsonRPCUrl,hashORACLE);
+            BigInteger sdsPrice = getSDSPrice(neoCliJsonRPCUrl,hashORACLE);
+            string neoPricestr = NEP5.changeDecimals(neoPrice,8);
+            string sdsPricestr = NEP5.changeDecimals(sdsPrice,8);
+
+            //string dates = "";
+            //string datee = "";
+            //统计查询各操作记录 db.operatedSAR4C.find({"blocktime":{"$gte":ISODate("2019-05-12"),"$lte":ISODate("2019-05-13")}})
+            //string findFilter = "{blocktime:{'$gte:':ISODate("+dates+ "),$lte:ISODate(" +datee +")}}";
+            //JArray arrs =  mh.GetData(mongodbConnStr,mongodbDatabase, "operatedSAR4C", findFilter);
+            //foreach (JObject ob in arrs) {
+            //    int type = (int)ob["type"];
+            //    decimal value = (decimal)ob["value"];
+            //}
+            string mortgageRate = (string)ret["mortgageRate"];
+            mortgageRate = mortgageRate.Substring(0,mortgageRate.Length-1);
+            NEP55.Staticdata data = new NEP55.Staticdata((decimal)ret["sdusdTotal"], (decimal)ret["lockedTotal"], (decimal)ret["sdsFeeTotal"],decimal.Parse(mortgageRate),
+                (decimal)feeRet["feeTotal"],decimal.Parse(neoPricestr),decimal.Parse(sdsPricestr), sarCount,n,sdusdCount,date,DateTime.Now);
+
+            var collectionPro = database.GetCollection<NEP55.Staticdata>("Staticdata");
+            collectionPro.InsertOne(data);
+            return ret;
+        }
+
+        private string getNep5Balance(string neoCliJsonRPCUrl,string NEP5scripthash, string NEP5address) {
+            string balanceBigint = "0";
+            try
+            {
+                byte[] NEP5addrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP5address);
+                string NEP5addrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5addrHash.Reverse().ToArray());
+                JObject NEP5balanceOfJ = ct.callContractForTest(neoCliJsonRPCUrl, new List<string> { NEP5scripthash }, new JArray() { JArray.Parse("['(str)balanceOf',['(hex)" + NEP5addrHashHex + "']]") });
+                string balanceStr = (string)((JArray)NEP5balanceOfJ["stack"])[0]["value"];
+                string balanceType = (string)((JArray)NEP5balanceOfJ["stack"])[0]["type"];
+
+                balanceBigint = "0";
+
+                if (balanceStr != string.Empty)
+                {
+                    balanceBigint = NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+                }
+            }
+            catch (Exception e) {
+                Console.WriteLine(e.Message);
+            }
+            return balanceBigint;
         }
     }
 }

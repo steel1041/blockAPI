@@ -176,7 +176,7 @@ namespace NEO_Block_API
         }
 
         //根据精度处理小数点（大整数模式处理）
-        private static string changeDecimals(BigInteger value, int decimals)
+        public static string changeDecimals(BigInteger value, int decimals)
         {
             BigInteger bi = BigInteger.DivRem(value, BigInteger.Pow(10, decimals), out BigInteger remainder);
             string numStr = bi.ToString();
