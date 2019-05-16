@@ -1210,13 +1210,19 @@ namespace NEO_Block_API.Controllers
                         addr = (string)req.@params[1];
                         result = bu.getLockListByAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID.formatHexStr(), addr);
                         break;
+                    case "getLockTypeByAdd":
+                        assetID = (string)req.@params[0];
+                        addr = (string)req.@params[1];
+                        result = getJAbyJ(bu.getLockTypeByAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID.formatHexStr(), addr));
+                        break;
                     case "getLockHistory":
-                        if (req.@params.Count() == 3)
+                        if (req.@params.Count() == 4)
                         {
-                            addr = (string)req.@params[0];
-                            findFliter = "{addr:'" + addr + "'}";
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{addr:'" + addr + "',asset:'"+assetID+"'}";
                             sortStr = "{'blockindex':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
                         else
                         {
@@ -1227,6 +1233,11 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "statcDataProcess":
                         result = getJAbyJ(bu.statcDataProcess(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSDUSD.formatHexStr(), hashSNEO.formatHexStr(), hashSAR4C.formatHexStr(), hashORACLE.formatHexStr(), addrSAR4C, oldAddrSAR4C));
+                        break;
+                    case "getstaticData":
+                        findFliter = "{}";
+                        sortStr = "{'now':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "Staticdata", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

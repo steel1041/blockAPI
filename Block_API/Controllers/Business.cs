@@ -1505,52 +1505,42 @@ namespace Block_API.Controllers
                 detail.Add("owner", owner);
                 Console.WriteLine("owner:" + owner);
 
-                //lockAddr
-                value = (string)sar[1]["value"];
-                string lockAddr = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
-                detail.Add("lockAddr", lockAddr);
-                Console.WriteLine("lockAddr:" + lockAddr);
-
                 //创建lock的txid
-                string txidValue = (string)sar[2]["value"];
+                string txidValue = (string)sar[1]["value"];
                 string txid = "0x" + ThinNeo.Helper.Bytes2HexString(ThinNeo.Helper.HexString2Bytes(txidValue).Reverse().ToArray());
                 detail.Add("txid", txid);
                 Console.WriteLine("txid:" + txid);
 
                 //locked
-                type = (string)sar[3]["type"];
-                value = (string)sar[3]["value"];
+                type = (string)sar[2]["type"];
+                value = (string)sar[2]["value"];
                 string lockedSrc = NEP5.getNumStrFromStr(type, value, 0);
                 string locked = NEP5.getNumStrFromStr(type, value, 8);
                 detail.Add("locked", locked);
                 Console.WriteLine("locked:" + locked);
 
                 //lockType
-                type = (string)sar[4]["type"];
-                value = (string)sar[4]["value"];
+                type = (string)sar[3]["type"];
+                value = (string)sar[3]["value"];
                 string locktype = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
                 detail.Add("lockType", locktype);
                 Console.WriteLine("lockType:" + locktype);
 
-                //status lock状态 1:安全，2:不安全,3:不可用
-                type = (string)sar[5]["type"];
-                value = (string)sar[5]["value"];
-                string statusSrc = NEP5.getNumStrFromStr(type, value, 0);
-                int status = int.Parse(statusSrc);
-
                 //lockTime
-                type = (string)sar[6]["type"];
-                value = (string)sar[6]["value"];
+                type = (string)sar[4]["type"];
+                value = (string)sar[4]["value"];
                 string lockSrc = NEP5.getNumStrFromStr(type, value, 0);
                 int lockTime = int.Parse(lockSrc);
                 detail.Add("lockTime", lockTime);
 
                 //lockHeight
-                type = (string)sar[7]["type"];
-                value = (string)sar[7]["value"];
+                type = (string)sar[5]["type"];
+                value = (string)sar[5]["value"];
                 string lockHeightSrc = NEP5.getNumStrFromStr(type, value, 0);
                 int lockHeight = int.Parse(lockHeightSrc);
                 detail.Add("lockHeight", lockHeight);
+
+
             }
             catch(Exception e)
             {
@@ -1560,6 +1550,24 @@ namespace Block_API.Controllers
 
             return detail;
 
+        }
+
+        internal JObject getLockTypeByAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string asset, string addr)
+        {
+            JObject ret = new JObject();
+            string script = invokeScript(new Hash160(asset), "getLockAdd", "(addr)" + addr, "(str)eth");
+            JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+
+            JObject ob = (JObject)((JArray)jo["stack"])[0];
+            //stack arrays
+            string type = (string)(ob["type"]);
+            string value = (string)(ob["value"]);
+            if (value!=null)
+            {
+                string lockAddr = System.Text.Encoding.UTF8.GetString(ThinNeo.Helper.HexString2Bytes(value));
+                ret.Add("eth", lockAddr);
+            }
+            return ret;
         }
 
         internal JObject statcDataProcess(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string hashSDUSD, string hashSNEO, 
