@@ -447,7 +447,25 @@ namespace NEO_Block_API
             public string dateKey { get; set; }
             public DateTime now { get; set; }
 
+        }
 
+        [BsonIgnoreExtraElements]
+        public class BonusRecord
+        {
+            public BonusRecord(string Id,string Addr,decimal LockedShare, decimal Total, DateTime Now)
+            {
+                batchId = Id;            
+                addr = Addr;
+                lockedShare = LockedShare;         
+                total = Total;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string batchId { get; set; }
+            public string addr { get; set; }
+            public decimal lockedShare { get; set; }
+            public decimal total { get; set; }
+            public DateTime now { get; set; }
         }
 
         private static string getAddrFromScriptHash(string scripitHash)

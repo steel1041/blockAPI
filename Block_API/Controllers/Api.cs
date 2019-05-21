@@ -1239,6 +1239,16 @@ namespace NEO_Block_API.Controllers
                         sortStr = "{'now':-1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "Staticdata", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         break;
+                    case "getHandOutRecord":
+                        assetID = (string)req.@params[0];
+                        result = getJAbyJ(bu.getHandOutRecord(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID.formatHexStr()));
+                        break;
+                    case "getHandOutRecordById":
+                        string batchId = (string)req.@params[0];
+                        findFliter = "{batchId:'"+ batchId+"'}";
+                        sortStr = "{}";
+                        result = mh.GetData(mongodbConnStr,mongodbDatabase, "BonusRecord", findFliter);
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {

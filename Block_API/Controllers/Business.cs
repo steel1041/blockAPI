@@ -14,6 +14,7 @@ using System.Numerics;
 using NEO_Block_API.Controllers;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using static NEO_Block_API.NEP55;
 
 namespace Block_API.Controllers
 {
@@ -68,6 +69,12 @@ namespace Block_API.Controllers
         private const string LOCK_02 = "lock_02";
         private const string LOCK_03 = "lock_03";
         private const string LOCK_04 = "lock_04";
+
+        private const decimal rate_01 = 1.0M;
+        private const decimal rate_02 = 1.1M;
+        private const decimal rate_03 = 1.2M;
+        private const decimal rate_04 = 1.3M;
+
 
         public Business()
         {
@@ -1552,6 +1559,37 @@ namespace Block_API.Controllers
 
         }
 
+        private decimal getLockedByType(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string asset, string addr, string lockType)
+        {
+            decimal ret = new decimal(0.0);
+
+            try
+            {
+                string script = invokeScript(new Hash160(asset), "getLockInfo", "(addr)" + addr, "(str)" + lockType);
+                JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+
+                //stack arrays
+                string type = (string)((JArray)jo["stack"])[0]["type"];
+                JArray sar = (JArray)((JArray)jo["stack"])[0]["value"];
+
+
+                //locked
+                type = (string)sar[2]["type"];
+                string value = (string)sar[2]["value"];
+                string lockedSrc = NEP5.getNumStrFromStr(type, value, 0);
+                string locked = NEP5.getNumStrFromStr(type, value, 8);
+                ret = decimal.Parse(locked);
+                Console.WriteLine("locked:" + locked);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("getLockedByType error:" + e.Message);
+            }
+            return ret;
+
+        }
+
         internal JObject getLockTypeByAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string asset, string addr)
         {
             JObject ret = new JObject();
@@ -1657,6 +1695,76 @@ namespace Block_API.Controllers
                 Console.WriteLine(e.Message);
             }
             return balanceBigint;
+        }
+
+        internal JObject getHandOutRecord(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string asset) {
+            JObject ret = new JObject();
+            string findFliter = "{asset:'"+asset+"'}";
+            JArray arrs = mh.GetData(mongodbConnStr, mongodbDatabase, "operatedLockAddr", findFliter);
+            List<string> addrs = new List<string>();
+
+            JArray addrList = new JArray();
+            decimal total = new decimal(0.0);
+            foreach (JObject vout in arrs)
+            {
+                string addr = (string)vout["addr"];
+               
+                if (!addrs.Contains(addr))
+                {
+                    JObject lockedOb = new JObject();
+                    addrs.Add(addr);
+
+                    decimal curr = new decimal(0.0);
+                  
+                    decimal locko1 = getLockedByType(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, asset, addr, LOCK_01);
+                    decimal locko2 = getLockedByType(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, asset, addr, LOCK_02);
+                    decimal locko3 = getLockedByType(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, asset, addr, LOCK_03);
+                    decimal locko4 = getLockedByType(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, asset, addr, LOCK_04);
+                    if (locko1.CompareTo(total) != 0)
+                    {
+                        total = total + locko1 * rate_01;
+                        curr = curr + locko1 * rate_01;
+                    }
+                    if (locko2.CompareTo(total) != 0)
+                    {
+                        total = total + locko2 * rate_02;
+                        curr = curr + locko2 * rate_02;
+                    }
+                    if (locko3.CompareTo(total) != 0)
+                    {
+                        total = total + locko3 * rate_03;
+                        curr = curr + locko3 * rate_03;
+
+                    }
+                    if (locko4.CompareTo(total) != 0)
+                    {
+                        total = total + locko4 * rate_04;
+                        curr = curr + locko4 * rate_04;
+                    }
+
+                    lockedOb.Add("addr",addr);
+                    lockedOb.Add("lockedShare",curr);
+                    addrList.Add(lockedOb);
+                }
+            }
+
+            //进行批次存入
+            string id = DateTime.Now.ToString("u");
+
+            //批量处理地址份额存入数据库
+            foreach (JObject curr in addrList)
+            {
+                string addr = (string)curr["addr"];
+                decimal lockedShare = (decimal)curr["lockedShare"];
+                var client = new MongoClient(mongodbConnStr);
+                var database = client.GetDatabase(mongodbDatabase);
+                BonusRecord re = new BonusRecord(id,addr, lockedShare, total, DateTime.Now);
+                var collectionPro = database.GetCollection<BonusRecord>("BonusRecord");
+                collectionPro.InsertOne(re);
+            }
+            ret.Add("result",id);
+            return ret;
+            
         }
     }
 }
