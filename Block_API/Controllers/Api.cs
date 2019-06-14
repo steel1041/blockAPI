@@ -17,6 +17,7 @@ namespace NEO_Block_API.Controllers
         private string mongodbConnStr { get; set; }
         private string mongodbDatabase { get; set; }
         private string neoCliJsonRPCUrl { get; set; }
+        private string neoCliJsonRPCUrlLocal { get; set; }
         private string neoRpcUrl_mainnet { get; set; }
 
         public string hashSDUSD { get; set; }
@@ -43,6 +44,7 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_testnet;
                     mongodbDatabase = mh.mongodbDatabase_testnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_testnet;
+                    neoCliJsonRPCUrlLocal = mh.neoCliJsonRPCUrl_local_testnet;
                     hashSDUSD = bu.hashSDUSD_testnet;
                     hashSAR4C = bu.hashSAR4C_testnet;
                     hashSAR4B = bu.hashSAR4B_testnet;
@@ -57,6 +59,7 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
                     mongodbDatabase = mh.mongodbDatabase_mainnet;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_mainnet;
+                    neoCliJsonRPCUrlLocal = mh.neoCliJsonRPCUrl_local_mainnet;
                     neoRpcUrl_mainnet = mh.neoRpcUrl_mainnet;
                     hashSDUSD = bu.hashSDUSD_mainnet;
                     hashSAR4C = bu.hashSAR4C_mainnet;
@@ -77,6 +80,7 @@ namespace NEO_Block_API.Controllers
                     mongodbConnStr = mh.mongodbConnStr_pri;
                     mongodbDatabase = mh.mongodbDatabase_pri;
                     neoCliJsonRPCUrl = mh.neoCliJsonRPCUrl_pri;
+                    neoCliJsonRPCUrlLocal = mh.neoCliJsonRPCUrl_local_pri;
                     hashSDUSD = bu.hashSDUSD_prinet;
                     hashSAR4C = bu.hashSAR4C_prinet;
                     hashSAR4B = bu.hashSAR4B_prinet;
@@ -793,14 +797,17 @@ namespace NEO_Block_API.Controllers
                     case "getsar4BDetailList":
                         findFliter = "{}";
                         sortStr = "{'blockindex':1}";
-
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
                         if (req.@params.Count() == 3)
                         {
                             string status = req.@params[0].ToString();
 
                             findFliter = "{status:" + status + "}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
-                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, hashORACLE);
+                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4B, hashORACLE);
                         }
                         if (req.@params.Count() == 4)
                         {
@@ -809,18 +816,21 @@ namespace NEO_Block_API.Controllers
 
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
-                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, hashORACLE);
+                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4B, hashORACLE);
                         }
                         else
                         {
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4B", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
-                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4B, hashORACLE);
+                            result = bu.processSAR4BDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4B, hashORACLE);
                         }
                         break;
                     case "getsar4BDetailByAdd":
                         findFliter = "{}";
                         sortStr = "{'blockindex':1}";
-
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
                         if (req.@params.Count() == 2)
                         {
                             addr = req.@params[0].ToString();
@@ -828,7 +838,7 @@ namespace NEO_Block_API.Controllers
 
                             //findFliter = "{status:1,addr:'" + addr + "',asset:'" + assetId + "'}";
                             //result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4B", findFliter);
-                            result = bu.processSingleSAR4BDetail(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, addr,hashSAR4B, hashORACLE);
+                            result = bu.processSingleSAR4BDetail(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, addr,hashSAR4B, hashORACLE);
                         }
                         break;
                     case "getsar4ccount":
@@ -874,13 +884,17 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{}";
                         sortStr = "{'blockindex':1}";
 
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
                         if (req.@params.Count() == 3)
                         {
                             string status = req.@params[0].ToString();
 
                             findFliter = "{status:" + status + "}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
-                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C, hashORACLE);
                         }
                         else if (req.@params.Count() == 4)
                         {
@@ -889,19 +903,23 @@ namespace NEO_Block_API.Controllers
 
                             findFliter = "{status:" + status + ",asset:'" + assetId + "'}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
-                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C, hashORACLE);
 
                         }
                         else
                         {
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "SAR4C", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
-                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSAR4C, hashORACLE);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C, hashORACLE);
                         }
                         break;
                     case "getsar4CDetailByAdd":
                         findFliter = "{}";
                         sortStr = "{'blockindex':1}";
 
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
                         if (req.@params.Count() == 2)
                         {
                             addr = req.@params[0].ToString();
@@ -909,7 +927,7 @@ namespace NEO_Block_API.Controllers
 
                             findFliter = "{status:1,addr:'" + addr + "',asset:'"+assetId+"'}";
                             result = mh.GetData(mongodbConnStr, mongodbDatabase, "SAR4C",findFliter);
-                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C, hashORACLE);
+                            result = bu.processSARDetail(result, mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C, hashORACLE);
                         }
                         break;
                     case "getOracleOperated":
@@ -1159,13 +1177,21 @@ namespace NEO_Block_API.Controllers
                         }
                         break;
                     case "getStaticReport":
-                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),addrSAR4C,oldAddrSAR4C));
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        result = getJAbyJ(bu.getStaticReport(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),addrSAR4C,oldAddrSAR4C));
                         break;
                     case "getAllassetBalance":
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
                         if (req.@params.Count() == 1)
                         {
                             address = (string)req.@params[0];
-                            result = bu.getAllassetBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl,address, hashSAR4B.formatHexStr(), hashTokenized.formatHexStr(), hashORACLE.formatHexStr(),hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSDS.formatHexStr());
+                            result = bu.getAllassetBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, address, hashSAR4B.formatHexStr(), hashTokenized.formatHexStr(), hashORACLE.formatHexStr(),hashSDUSD.formatHexStr(),hashSNEO.formatHexStr(),hashSDS.formatHexStr());
                         }
                         break;
                     case "getOracleConfig":
@@ -1198,8 +1224,10 @@ namespace NEO_Block_API.Controllers
                     case "processSARFilterByRate":
                         decimal start = decimal.Parse(req.@params[0].ToString());
                         decimal end = decimal.Parse(req.@params[1].ToString());
-
-                        result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),start,end);
+                        if (neoCliJsonRPCUrlLocal.Length <= 0) {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),start,end);
                         break;
                     case "predictFeeTotal":
                         result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C.formatHexStr(), hashORACLE.formatHexStr()));
@@ -1248,6 +1276,47 @@ namespace NEO_Block_API.Controllers
                         findFliter = "{batchId:'"+ batchId+"'}";
                         sortStr = "{}";
                         result = mh.GetData(mongodbConnStr,mongodbDatabase, "BonusRecord", findFliter);
+                        break;
+
+                    //账户系统相关操作    
+                    case "getAccAppList"://app列表
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        findFliter = "{'asset':'" + assetID + "',type:1}";
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accOperator", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                        break;
+                    case "getAccApproveAppList":
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        string username = (string)req.@params[2];
+                        result = bu.getAccApproveAppList(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr, username);
+                        break;
+                    case "getAccOperatorHis"://账户操作历史
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        findFliter = "{'asset':'" + assetID + "','addr':'"+ addr + "'}";
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accOperator", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        break;
+                    case "getAccBalanceByAdd"://账户余额
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        username = (string)req.@params[2];
+                        result = bu.getAccBalanceByAdd(mongodbConnStr, mongodbDatabase,neoCliJsonRPCUrl,assetID,addr,username);
+                        break;
+                    case "getAccApproveHis"://账户授权记录
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accApproveOperator", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        break;
+                    case "getAccTransferHis"://账户转账历史
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+                        sortStr = "{'blockindex':-1}";
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accUserTransfer", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

@@ -1674,6 +1674,73 @@ namespace Block_API.Controllers
             return ret;
         }
 
+        internal JArray getAccApproveAppList(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string username)
+        {
+            JArray ret = new JArray();
+            string findFliter = "{'asset':'" + assetID + "','from':'" + addr + "','nameSrc':'"+username+"'}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accApproveOperator", findFliter);
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            foreach (JObject ob in arrays)
+            {
+                string nameDest = (string)ob["nameDest"];
+                string addDest = (string)ob["to"];
+                if (!names.ContainsKey(nameDest))
+                {
+                    names.Add(nameDest, "1");
+                    JObject balance = new JObject();
+                    balance.Add("name", nameDest);
+                    balance.Add("addr", addDest);
+
+                    ret.Add(balance);
+                }
+            }
+            return ret;
+        }
+
+        internal JArray getAccBalanceByAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr,string username)
+        {
+            JArray ret = new JArray();
+            string findFliter = "{'asset':'" + assetID + "','addr':'"+addr+"','type':2}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accOperator",findFliter);
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            foreach (JObject ob in arrays) {
+                string type = "";
+                string assetName = (string)ob["name"];
+                string simpleName = assetName;
+                if (!names.ContainsKey(assetName)) {
+                    string balanceBigint = "";
+                    if (assetName.StartsWith("SD-"))
+                    {
+                        string script = invokeScript(new Hash160(assetID), "getBalance", "(str)" + username, "(str)nep55", "(str)" + assetName);
+                        JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                        string balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                        string balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                        balanceBigint = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+                        type = "nep55";
+                    }
+                    //nep5资产默认sds
+                    else {
+                        string script = invokeScript(new Hash160(assetID), "getBalance", "(str)" + username, "(str)nep5", "(str)sds_account");
+                        JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                        string balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                        string balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                        balanceBigint = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+                        type = "nep5";
+                        simpleName = "SDS";
+                    }
+
+                    names.Add(assetName, "1");
+                    JObject balance = new JObject();
+                    balance.Add("name", simpleName);
+                    balance.Add("type",type);
+                    balance.Add("balance", balanceBigint);
+                    ret.Add(balance);
+                }
+            }
+
+            return ret;
+        }
+
         private string getNep5Balance(string neoCliJsonRPCUrl,string NEP5scripthash, string NEP5address) {
             string balanceBigint = "0";
             try
@@ -1758,7 +1825,7 @@ namespace Block_API.Controllers
                 decimal lockedShare = (decimal)curr["lockedShare"];
                 var client = new MongoClient(mongodbConnStr);
                 var database = client.GetDatabase(mongodbDatabase);
-                BonusRecord re = new BonusRecord(id,addr, lockedShare, total, DateTime.Now);
+                BonusRecord re = new BonusRecord(id,addr,lockedShare, total, DateTime.Now);
                 var collectionPro = database.GetCollection<BonusRecord>("BonusRecord");
                 collectionPro.InsertOne(re);
             }
