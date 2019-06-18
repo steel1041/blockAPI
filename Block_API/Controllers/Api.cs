@@ -1312,11 +1312,24 @@ namespace NEO_Block_API.Controllers
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accApproveOperator", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         break;
                     case "getAccTransferHis"://账户转账历史
-                        assetID = ((string)req.@params[0]).formatHexStr();
-                        addr = (string)req.@params[1];
-                        findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
-                        sortStr = "{'blockindex':-1}";
-                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accUserTransfer", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        if (req.@params.Count() == 4)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accUserTransfer", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+
+                        }
+                        else if (req.@params.Count() == 5)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            string to = (string)req.@params[2];
+                            findFliter = "{'asset':'" + assetID + "','from':'" + addr +"','to':'"+ to +"'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accUserTransfer", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
+                        }
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

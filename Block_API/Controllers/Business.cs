@@ -1690,7 +1690,54 @@ namespace Block_API.Controllers
                     JObject balance = new JObject();
                     balance.Add("name", nameDest);
                     balance.Add("addr", addDest);
+                    //增加授权明细金额
+                    balance.Add("approves",getApproveDetailList(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,assetID,addr,username,addDest,nameDest));
+                    ret.Add(balance);
+                }
+            }
+            return ret;
+        }
 
+        private JArray getApproveDetailList(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string username, string addDest, string nameDest)
+        {
+            JArray ret = new JArray();
+
+            string findFliter = "{'asset':'" + assetID + "','from':'" + addr + "','nameSrc':'" + username+"','to':'" + addDest+ "','nameDest':'" + nameDest+"'}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accApproveOperator", findFliter);
+
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            foreach (JObject ob in arrays)
+            {
+                string assetType = (string)ob["assetType"];
+                string assetName = (string)ob["assetName"];
+                if (!names.ContainsKey(assetName))
+                {
+                    names.Add(assetName, "1");
+                    JObject balance = new JObject();
+                    balance.Add("assetType", assetType);
+                    balance.Add("assetName", assetName);
+
+                    string script = invokeScript(new Hash160(assetID), "getApproveInfo", "(str)" + username,"(str)"+nameDest,"(str)1","(str)"+ assetType, "(str)"+ assetName);
+                    JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                    string balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                    string balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                    string approveTotal = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+
+                    script = invokeScript(new Hash160(assetID), "getApproveInfo", "(str)" + username, "(str)" + nameDest, "(str)2", "(str)" + assetType, "(str)" + assetName);
+                    jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                    balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                    balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                    string approveSingle = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+
+                    script = invokeScript(new Hash160(assetID), "getApproveInfo", "(str)" + username, "(str)" + nameDest, "(str)3", "(str)" + assetType, "(str)" + assetName);
+                    jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                    balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                    balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                    string approveHz = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 0);
+
+                    balance.Add("total",approveTotal);
+                    balance.Add("single",approveSingle);
+                    balance.Add("hz",approveHz);
                     ret.Add(balance);
                 }
             }
@@ -1718,8 +1765,19 @@ namespace Block_API.Controllers
                         balanceBigint = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
                         type = "nep55";
                     }
-                    //nep5资产默认sds
-                    else {
+                    //nep5资产默认sdusd
+                    else if (assetName == "sdusd_account")
+                    {
+                        string script = invokeScript(new Hash160(assetID), "getBalance", "(str)" + username, "(str)nep5", "(str)sdusd_account");
+                        JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
+                        string balanceType = (string)((JArray)jo["stack"])[0]["type"];
+                        string balanceStr = (string)((JArray)jo["stack"])[0]["value"];
+                        balanceBigint = NEO_Block_API.NEP5.getNumStrFromStr(balanceType, balanceStr, 8);
+                        type = "nep5";
+                        simpleName = "SDUSD";
+                    }
+                    else if (assetName == "sds_account")
+                    {
                         string script = invokeScript(new Hash160(assetID), "getBalance", "(str)" + username, "(str)nep5", "(str)sds_account");
                         JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
                         string balanceType = (string)((JArray)jo["stack"])[0]["type"];
