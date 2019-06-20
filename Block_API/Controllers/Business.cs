@@ -1744,6 +1744,71 @@ namespace Block_API.Controllers
             return ret;
         }
 
+        internal JObject getAccAppDetail(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string username)
+        {
+            JObject ret = new JObject();
+            //统计已经被授权的app个数
+            string findFliter = "{'asset':'" + assetID + "','to':'" + addr + "','nameDest':'" + username + "'}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accApproveOperator", findFliter);
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            JArray auths = new JArray();
+            foreach (JObject ob in arrays)
+            {
+                string nameSrc = (string)ob["nameSrc"];
+                string addSrc = (string)ob["from"];
+                if (!names.ContainsKey(nameSrc))
+                {
+                    names.Add(nameSrc, "1");
+                    JObject balance = new JObject();
+                    balance.Add("name", nameSrc);
+                    balance.Add("addr", addSrc);
+
+                    auths.Add(balance);
+                }
+            }
+            ret.Add("auths", auths.Count());
+
+            //统计划转交易量，按照不同资产计算
+            findFliter = "{$or:[{'from':'" + addr + "'},{'to':'" + addr + "'}]," + "asset:'" + assetID + "'}";
+
+            arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accUserTransfer", findFliter);
+            Dictionary<string, string> assetNames = new Dictionary<string, string>();
+            JArray assetTotal = new JArray();
+            foreach (JObject ob in arrays)
+            {
+                string assetName = (string)ob["assetName"];
+                string assetType = (string)ob["assetType"];
+                string key = assetType + assetName;
+                if (!assetNames.ContainsKey(key))
+                {
+                    assetNames.Add(key, "1");
+
+                    JObject balance = new JObject();
+                    balance.Add("assetName", assetName);
+                    balance.Add("assetType", assetType);
+                    balance.Add("assetTotal",getAccAppTransferTotal(mongodbConnStr,mongodbDatabase,assetID,addr,assetName,assetType));
+                    assetTotal.Add(balance);
+                }
+            }
+            ret.Add("assetTotal", assetTotal);
+            return ret;
+        }
+
+        private decimal getAccAppTransferTotal(string mongodbConnStr, string mongodbDatabase, string assetID, string addr, string assetName, string assetType)
+        {
+            string findFliter = "{asset:'" + assetID + "',assetName:'" + assetName + "',assetType:'" + assetType + "',$or:[{'to':'" + addr + "'},{'from':'" + addr + "'}]}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accUserTransfer", findFliter);
+            Dictionary<string, string> assetNames = new Dictionary<string, string>();
+            JArray assetTotal = new JArray();
+            decimal ret = 0;
+            foreach (JObject ob in arrays)
+            {
+                string value = (string)ob["value"];
+                ret = ret + decimal.Parse(value);
+            }
+            return ret;
+        }
+
         internal JArray getAccBalanceByAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr,string username)
         {
             JArray ret = new JArray();

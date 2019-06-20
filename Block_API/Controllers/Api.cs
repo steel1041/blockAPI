@@ -1331,6 +1331,13 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "accUserTransfer", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
                         }
                         break;
+                    case "getAccAppDetail"://app详细信息
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        username = (string)req.@params[2];
+                        result = getJAbyJ(bu.getAccAppDetail(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr, username));
+                        break;
+
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
