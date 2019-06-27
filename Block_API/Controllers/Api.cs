@@ -1263,11 +1263,16 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
+                    
                     case "statcDataProcess":
                         result = getJAbyJ(bu.statcDataProcess(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSDUSD.formatHexStr(), hashSNEO.formatHexStr(), hashSAR4C.formatHexStr(), hashORACLE.formatHexStr(), addrSAR4C, oldAddrSAR4C));
                         break;
-                    case "getstaticData":
+                    case "getstaticDataCount":
                         findFliter = "{}";
+                        result = getJAbyKV("datacount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "Staticdata", findFliter));
+                        break;
+                    case "getstaticData": 
+                        findFliter = "{}"; 
                         sortStr = "{'now':-1}";
                         result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "Staticdata", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         break;
@@ -1281,7 +1286,6 @@ namespace NEO_Block_API.Controllers
                         sortStr = "{}";
                         result = mh.GetData(mongodbConnStr,mongodbDatabase, "BonusRecord", findFliter);
                         break;
-
                     //账户系统相关操作    
                     case "getAccAppList"://app列表
                         assetID = ((string)req.@params[0]).formatHexStr();
@@ -1372,6 +1376,13 @@ namespace NEO_Block_API.Controllers
                         assetID = ((string)req.@params[0]).formatHexStr();
                         addr = (string)req.@params[1];
                         result = getJAbyJ(bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal,assetID,addr));
+                        break;
+                    case "setRefundFlagByTxid":
+                        txid = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        int n = int.Parse(req.@params[2].ToString());
+
+                        result = getJAbyJ(bu.setRefundFlagByTxid(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, txid,n,addr));
                         break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

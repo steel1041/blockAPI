@@ -1267,7 +1267,7 @@ namespace Block_API.Controllers
             {
                 string txid = (string)utxo["txid"];
                 int n = (int)utxo["n"];
-                if (n > 0)
+                if (n > 0 && !checkRefund(mongodbConnStr,mongodbDatabase,txid,n))
                 {
                     ret.Add(utxo);
                     continue;
@@ -1278,12 +1278,25 @@ namespace Block_API.Controllers
                     string script = invokeScript(new Hash160(hashSNEO), "getRefundTarget", "(hex256)" + txid);
                     JObject jo = ct.invokeScript(neoCliJsonRPCUrl, script);
                     string value = (string)((JArray)jo["stack"])[0]["value"];
-                    if (value.Length == 0 || value == "")
+                    if ((value.Length == 0 || value == "") && !checkRefund(mongodbConnStr, mongodbDatabase, txid, n))
                     {
                         ret.Add(utxo);
                     }
                 }
             }
+            return ret;
+        }
+
+        private bool checkRefund(string mongodbConnStr,string mongodbDatabase,string txid,int n) {
+            bool ret = false;
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collBson = database.GetCollection<BsonDocument>("refundFlag");
+            var findLockBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + "}");
+            var queryBson = collBson.Find(findLockBson).ToList();
+
+            if (queryBson.Count > 0) ret = true;
+
             return ret;
         }
 
@@ -1766,6 +1779,25 @@ namespace Block_API.Controllers
                     ret.Add(balance);
                 }
             }
+            return ret;
+        }
+
+        internal JObject setRefundFlagByTxid(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, string txid, int n, string addr)
+        {
+            JObject ret = new JObject();
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collBson = database.GetCollection<BsonDocument>("refundFlag");
+            var findLockBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + "}");
+            var queryBson = collBson.Find(findLockBson).ToList();
+
+            if (queryBson.Count == 0)//不重复才存
+            {
+                NEP55.RefundFlag tf = new NEP55.RefundFlag(txid,n,addr,DateTime.Now);
+                var collOperated = database.GetCollection<NEP55.RefundFlag>("refundFlag");
+                collOperated.InsertOne(tf);
+            }
+            ret.Add("result",true);
             return ret;
         }
 

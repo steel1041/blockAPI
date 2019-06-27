@@ -546,6 +546,22 @@ namespace NEO_Block_API
             public DateTime now { get; set; }
         }
 
+        [BsonIgnoreExtraElements]
+        public class RefundFlag
+        {
+            public RefundFlag(string Txid,int N,string Addr,DateTime Now)
+            {
+                txid = Txid;
+                addr = Addr;
+                n = N;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string txid { get; set; }
+            public string addr { get; set; }
+            public int n { get; set; }
+            public DateTime now { get; set; }
+        }
 
         private static string getAddrFromScriptHash(string scripitHash)
         {
