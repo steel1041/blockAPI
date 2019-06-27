@@ -24,6 +24,8 @@ namespace Block_API.Controllers
 
         Contract ct = new Contract();
 
+        NEO_Block_API.Controllers.Transaction tr = new NEO_Block_API.Controllers.Transaction();
+
         public string hashSDUSD_prinet = string.Empty;
         public string hashSAR4C_prinet = string.Empty;
         public string hashSNEO_prinet = string.Empty;
@@ -1016,6 +1018,75 @@ namespace Block_API.Controllers
             return result;
         }
 
+        public JArray getGoodsBalance(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string NEP55addr, string NEP55asset, bool isNeedBalance)
+        {
+            JArray result = new JArray();
+
+            string findTransferTo = "{ to:'" + NEP55addr + "',asset:'" + NEP55asset + "'}";
+            JArray transferSARToJA = mh.GetData(mongodbConnStr, mongodbDatabase, "goodsTransfer", findTransferTo);
+            List<NEP55.GoodsTransfer> tfts55 = new List<NEP55.GoodsTransfer>();
+            foreach (JObject tfJ in transferSARToJA)
+            {
+                tfts55.Add(new NEP55.GoodsTransfer(tfJ));
+            }
+            var queryTo55 = from tft in tfts55
+                            group tft by tft.name into tftG
+                            select new { name = tftG.Key };
+            var nameAdds = queryTo55.ToList();
+
+            //如果需要余额，则通过cli RPC批量获取余额
+            List<NEP55.AssetBalanceOfAddr> AssetBalances = new List<NEP55.AssetBalanceOfAddr>();
+            if (isNeedBalance)
+            {
+                List<NEP55.AssetBalanceOfAddr> addrAssetBalancesTemp = new List<NEP55.AssetBalanceOfAddr>();
+                foreach (var nameAdd in nameAdds)
+                {
+                    addrAssetBalancesTemp.Add(new NEP55.AssetBalanceOfAddr(NEP55asset, nameAdd.name, nameAdd.name, string.Empty));
+                }
+
+                List<string> nep55Contract = new List<string>();
+                JArray queryParams = new JArray();
+                byte[] NEP5allAssetOfAddrHash = ThinNeo.Helper.GetPublicKeyHashFromAddress(NEP55addr);
+                string NEP5allAssetOfAddrHashHex = ThinNeo.Helper.Bytes2HexString(NEP5allAssetOfAddrHash.Reverse().ToArray());
+                foreach (var abt in addrAssetBalancesTemp)
+                {
+                    nep55Contract.Add(NEP55asset);
+                    queryParams.Add(JArray.Parse("['(str)balanceOf',['(str)" + abt.name + "','(hex)" + NEP5allAssetOfAddrHashHex + "']]"));
+                }
+                JArray NEP55allAssetBalanceJA = (JArray)ct.callContractForTest(neoCliJsonRPCUrl, nep55Contract, queryParams)["stack"];
+                var a = Newtonsoft.Json.JsonConvert.SerializeObject(NEP55allAssetBalanceJA);
+                foreach (var abt in addrAssetBalancesTemp)
+                {
+                    string allBalanceStr = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["value"];
+                    string allBalanceType = (string)NEP55allAssetBalanceJA[addrAssetBalancesTemp.IndexOf(abt)]["type"];
+
+                    abt.balance = NEP5.getNumStrFromStr(allBalanceType, allBalanceStr, 8);
+                }
+
+                //去除余额为0的资产
+                foreach (var abt in addrAssetBalancesTemp)
+                {
+                    if (abt.balance != string.Empty && abt.balance != "0")
+                    {
+                        AssetBalances.Add(abt);
+                    }
+                }
+            }
+
+            if (!isNeedBalance)
+            {
+                result = JArray.FromObject(nameAdds);
+            }
+            else
+            {
+                result = JArray.FromObject(AssetBalances);
+            }
+
+            return result;
+        }
+
+
+
         public JArray getOracleConfig(string neoCliJsonRPCUrl, string hashORACLE, string type, string key)
         {
             JArray result = new JArray();
@@ -1694,6 +1765,41 @@ namespace Block_API.Controllers
                     balance.Add("approves",getApproveDetailList(mongodbConnStr,mongodbDatabase,neoCliJsonRPCUrl,assetID,addr,username,addDest,nameDest));
                     ret.Add(balance);
                 }
+            }
+            return ret;
+        }
+
+        internal JObject getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
+        {
+            JObject ret = new JObject();
+            //db.goodsTransfer.find({"blocktime":{"$gte":ISODate("2019-06-26T00:00:00.000Z"),"$lte":ISODate("2019-06-27T00:00:00.000Z")}});
+            
+            string findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+            JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
+
+            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+            //转账发送物品
+            byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
+            byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
+            string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
+            string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID),
+                 "transfer",
+                "(str)abc",
+                "(addr)"+address,
+                "(addr)" +addr,
+                "(int)1");
+
+            JObject result = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+
+            if ((bool)result["sendrawtransactionresult"])
+            {
+                string txid = (string)result["txid"];
+                //存入签收数据
+                var client = new MongoClient(mongodbConnStr);
+                var database = client.GetDatabase(mongodbDatabase);
+                NEP55.GoodsSign sign = new NEP55.GoodsSign(txid,addr, assetID,DateTime.Now);
+                var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
+                collectionPro.InsertOne(sign);
             }
             return ret;
         }

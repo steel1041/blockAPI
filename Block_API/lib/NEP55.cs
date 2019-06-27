@@ -468,6 +468,85 @@ namespace NEO_Block_API
             public DateTime now { get; set; }
         }
 
+        [BsonIgnoreExtraElements]
+        public class GoodsTransfer
+        {
+            public GoodsTransfer(JObject tfJ)
+            {
+                blockindex = (int)tfJ["blockindex"];
+                name = (string)tfJ["name"];
+                txid = (string)tfJ["txid"];
+                n = (int)tfJ["n"];
+                asset = (string)tfJ["asset"];
+                from = (string)tfJ["from"];
+                to = (string)tfJ["to"];
+                value = (decimal)tfJ["value"];
+                //blocktime = (DateTime)tfJ["blocktime"];
+            }
+
+            public GoodsTransfer(int Blockindex, string Name, string Txid, int N, JObject notification, int decimals, DateTime time)
+            {
+                blockindex = Blockindex;
+                txid = Txid;
+                n = N;
+                name = Name;
+                asset = (string)notification["contract"];
+
+                JArray JA = (JArray)notification["state"]["value"];
+
+                from = getAddrFromScriptHash((string)JA[2]["value"]);
+                to = getAddrFromScriptHash((string)JA[3]["value"]);
+
+                string valueType = (string)JA[4]["type"];
+                string valueString = (string)JA[4]["value"];
+                if (valueType == "ByteArray")//标准nep5
+                {
+                    value = decimal.Parse(getNumStrFromHexStr(valueString, 0));
+                }
+                else if (valueType == "Integer")//变种nep5
+                {
+                    value = decimal.Parse(getNumStrFromIntStr(valueString, 0));
+                }
+                else//未知情况用-1表示
+                {
+                    value = -1;
+                }
+
+                blocktime = time;
+
+            }
+
+            public ObjectId _id { get; set; }
+            public int blockindex { get; set; }
+            public string name { get; set; }
+            public string txid { get; set; }
+            public int n { get; set; }
+            public string asset { get; set; }
+            public string from { get; set; }
+            public string to { get; set; }
+            public decimal value { get; set; }
+            public DateTime blocktime { get; set; }
+        }
+
+
+        [BsonIgnoreExtraElements]
+        public class GoodsSign
+        {
+            public GoodsSign(string Txid, string Addr, string AssetId,  DateTime Now)
+            {
+                txid = Txid;
+                addr = Addr;
+                assetId = AssetId;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string txid { get; set; }
+            public string addr { get; set; }
+            public string assetId { get; set; }
+            public DateTime now { get; set; }
+        }
+
+
         private static string getAddrFromScriptHash(string scripitHash)
         {
             if (scripitHash != string.Empty)

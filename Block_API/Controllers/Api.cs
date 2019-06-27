@@ -1230,7 +1230,11 @@ namespace NEO_Block_API.Controllers
                         result = bu.processSARFilterByRate(mongodbConnStr,mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C.formatHexStr(),hashORACLE.formatHexStr(),start,end);
                         break;
                     case "predictFeeTotal":
-                        result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSAR4C.formatHexStr(), hashORACLE.formatHexStr()));
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        result = getJAbyJ(bu.predictFeeTotal(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, hashSAR4C.formatHexStr(), hashORACLE.formatHexStr()));
                         break;
                         //根据地址获取所有锁仓账户信息
                     case "getLockListByAdd":
@@ -1337,7 +1341,38 @@ namespace NEO_Block_API.Controllers
                         username = (string)req.@params[2];
                         result = getJAbyJ(bu.getAccAppDetail(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr, username));
                         break;
+                    case "getGoodsList"://goods列表
+                        if (req.@params.Count() == 3)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            findFliter = "{'asset':'" + assetID + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsInit", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
 
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+                            sortStr = "{'blockindex':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsInit", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        break;
+                    case "getGoodsBalance":
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        result = bu.getGoodsBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, addr, assetID, true);
+                        break;
+                    case "getSignForAdd":
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        result = getJAbyJ(bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal,assetID,addr));
+                        break;
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
