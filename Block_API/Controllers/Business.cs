@@ -15,6 +15,8 @@ using NEO_Block_API.Controllers;
 using MongoDB.Driver;
 using MongoDB.Bson;
 using static NEO_Block_API.NEP55;
+using System.Globalization;
+using MongoDB.Bson.IO;
 
 namespace Block_API.Controllers
 {
@@ -77,6 +79,7 @@ namespace Block_API.Controllers
         private const decimal rate_03 = 1.2M;
         private const decimal rate_04 = 1.3M;
 
+        public int ten_pow = 100000000;
 
         public Business()
         {
@@ -1782,31 +1785,65 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        internal JObject setRefundFlagByTxid(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, string txid, int n, string addr)
+        internal JObject setRefundFlagByTxid(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal,JArray txids,string addr)
         {
             JObject ret = new JObject();
             var client = new MongoClient(mongodbConnStr);
             var database = client.GetDatabase(mongodbDatabase);
             var collBson = database.GetCollection<BsonDocument>("refundFlag");
-            var findLockBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + "}");
-            var queryBson = collBson.Find(findLockBson).ToList();
 
-            if (queryBson.Count == 0)//不重复才存
-            {
-                NEP55.RefundFlag tf = new NEP55.RefundFlag(txid,n,addr,DateTime.Now);
-                var collOperated = database.GetCollection<NEP55.RefundFlag>("refundFlag");
-                collOperated.InsertOne(tf);
+            foreach (JObject ob in txids) {
+                string txid = (string)ob["txid"];
+                int n = (int)ob["n"];
+                var findLockBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + "}");
+                var queryBson = collBson.Find(findLockBson).ToList();
+
+                if (queryBson.Count == 0)//不重复才存
+                {
+                    NEP55.RefundFlag tf = new NEP55.RefundFlag(txid, n, addr, DateTime.Now);
+                    var collOperated = database.GetCollection<NEP55.RefundFlag>("refundFlag");
+                    collOperated.InsertOne(tf);
+                }
             }
             ret.Add("result",true);
+            return ret;
+        }
+
+
+        internal JObject setRefundErrorFlagByTxid(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, JArray txids, string addr,string msg)
+        {
+            JObject ret = new JObject();
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collBson = database.GetCollection<BsonDocument>("refundErrorFlag");
+
+            foreach (JObject ob in txids)
+            {
+                string txid = (string)ob["txid"];
+                int n = (int)ob["n"];
+                var findLockBson = BsonDocument.Parse("{txid:'" + txid + "',n:" + n + "}");
+                var queryBson = collBson.Find(findLockBson).ToList();
+
+                if (queryBson.Count == 0)//不重复才存
+                {
+                    NEP55.RefundErrorFlag tf = new NEP55.RefundErrorFlag(txid, n, addr, msg,DateTime.Now);
+                    var collOperated = database.GetCollection<NEP55.RefundErrorFlag>("refundErrorFlag");
+                    collOperated.InsertOne(tf);
+                }
+            }
+            ret.Add("result", true);
             return ret;
         }
 
         internal JObject getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
         {
             JObject ret = new JObject();
-            //db.goodsTransfer.find({"blocktime":{"$gte":ISODate("2019-06-26T00:00:00.000Z"),"$lte":ISODate("2019-06-27T00:00:00.000Z")}});
+            //db.goodsTransfer.find({"blocktime":{"$gte":ISODate("2019-06-26T00:00:00.000Z"),"$lte":ISODate("2019-06-26T23:59:59.000Z")}});
             
-            string findFliter = "{'asset':'" + assetID + "','from':'" + addr + "'}";
+            DateTime dt = DateTime.Now;
+            string str= dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
+            Console.WriteLine(str);
+            string findFliter = "{asset:'" + assetID + "',addr:'" + addr +"',now:{'$gte':ISODate('"+ str+ "T00:00:00.000Z'),'$lte':ISODate('" + str+ "T23:59:59.000Z')}}";
             JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
 
             string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
@@ -1816,25 +1853,248 @@ namespace Block_API.Controllers
             string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
             string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID),
                  "transfer",
-                "(str)abc",
-                "(addr)"+address,
-                "(addr)" +addr,
-                "(int)1");
+                "(str)SD-NEXT",
+                "(addr)" + address,
+                "(addr)" + addr,
+                "(int)100000000");
 
-            JObject result = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
-
-            if ((bool)result["sendrawtransactionresult"])
+            JObject result2 = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+            bool result = false;
+            if (arrays.Count == 0 && (bool)result2["sendrawtransactionresult"] == true)
             {
-                string txid = (string)result["txid"];
+                string txid = (string)result2["txid"];
                 //存入签收数据
                 var client = new MongoClient(mongodbConnStr);
                 var database = client.GetDatabase(mongodbDatabase);
-                NEP55.GoodsSign sign = new NEP55.GoodsSign(txid,addr, assetID,DateTime.Now);
+                NEP55.GoodsSign sign = new NEP55.GoodsSign(str,addr, assetID, txid,DateTime.Now);
                 var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
                 collectionPro.InsertOne(sign);
+                result = true;
+            }
+            ret.Add("result",result);
+            return ret;
+        }
+
+        private JObject sendTransfer(string mongodbConnStr,string mongodbDatabase, string assetID,string neoCliJsonRPCUrl,string addr,int mount) {
+            JObject ret = new JObject();
+            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+            //转账发送物品
+            byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
+            byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
+            string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
+
+            string username = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr);
+            string othername = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, address);
+            if (username == "" || othername == "")
+            {
+                ret.Add("sendrawtransactionresult", false);
+                return ret;
+            }
+
+            string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID), "userTransfer",
+            "(addr)" + address,
+            "(str)" + username,
+            "(str)" + othername,
+            "(str)nep55",
+            "(str)SD-NEXT",
+            "(int)" + mount * ten_pow);
+
+            return tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+
+        }
+
+        internal JObject setGuessStatus(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, string addr, string key)
+        {
+            //根据猜测单双规则进行发放奖励
+            JObject ret = new JObject();
+
+            string findFliter = "{addr:'" + addr + "',key:'" + key + "'}";
+            BsonDocument queryBson = BsonDocument.Parse(findFliter);
+
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collectionPro = database.GetCollection<NEP55.GoodsGuess>("goodsGuess");
+            List<NEP55.GoodsGuess> queryBsonList = collectionPro.Find(queryBson).ToList();
+
+            bool result = false;
+            if (queryBsonList.Count >= 1)
+            {
+                NEP55.GoodsGuess guess = queryBsonList[0];
+                guess.status = 1;
+                collectionPro.ReplaceOne(queryBson, guess);
+                result = true;
+            }
+            ret.Add("result", result);
+            return ret;
+        }
+
+        internal JObject ProcessGoodsGuessInfo(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string token)
+        {
+            JObject ret = new JObject();
+            //查出所有未有猜测结果的goodsGuess数据
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+
+            var collBson = database.GetCollection<NEP55.GoodsGuess>("goodsGuess");
+            var findBsonBson = BsonDocument.Parse("{result:0}");
+            List<NEP55.GoodsGuess> queryBson = collBson.Find(findBsonBson).ToList();
+
+            if (queryBson.Count > 0)
+            {
+                foreach (NEP55.GoodsGuess oper in queryBson)
+                {
+                    string key = oper.key;
+                    string addr = oper.addr;
+                    string txid = oper.txid;
+                    int guess = oper.guess; //猜测结果
+                    long blockindex = oper.blockindex;//猜测区块高度
+                    int mount = oper.mount;
+                    //根据txid判断是否收到转账，如果没有则表示扣款失败
+                    var coll = database.GetCollection<BsonDocument>("accUserTransfer");
+                    BsonDocument bson = BsonDocument.Parse("{txid:'" + txid + "'}");
+                    var transfers = coll.Find(bson).ToList();
+                    if (transfers.Count <= 0)
+                        continue;
+
+                    //根据区块高度查询hash值，然后判断结果
+                    var collutxo = database.GetCollection<BsonDocument>("block");
+                    BsonDocument queryutxoBson = BsonDocument.Parse("{index:" + blockindex + "}");
+                    var query = collutxo.Find(queryutxoBson).ToList();
+                    if (query.Count > 0)
+                    {
+                        var jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.Strict };
+                        JObject block = JObject.Parse(query[0].ToJson(jsonWriterSettings));
+
+                        string hash = (string)block["hash"];
+                        oper.result = checkGuess(guess, hash);
+                        oper.hash = hash;
+                        oper.status = 1;
+                        string findFliter = "{addr:'" + addr + "',txid:'" + txid + "'}";
+
+                        //猜中的则进行双倍
+                        string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+                        //转账发送物品
+                        byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
+                        byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
+                        string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
+
+                        string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(token), "transfer",
+                        "(str)SD-NEXT",
+                        "(addr)"+address,
+                        "(addr)"+addr,
+                        "(int)" + 2*mount * ten_pow);
+
+                         ret = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+                         collBson.ReplaceOne(findFliter, oper);
+                    }
+
+                }
             }
             return ret;
         }
+
+        private static int checkGuess(int guess, string hash)
+        {
+            //1:正确,2:不正确
+            int ret = 0;
+            char[] smalls = new char[] { '1', '3', '5', '7', '9', 'A', 'C', 'E', 'G', 'I', 'K', 'M', 'O', 'Q', 'S', 'U', 'W', 'Y' };
+            char[] bigs = new char[] { '2', '4', '6', '8', '0', 'B', 'D', 'F', 'H', 'J', 'L', 'N', 'P', 'R', 'T', 'V', 'X', 'Z' };
+            hash = hash.ToUpper();
+            int len = hash.Length;
+
+            string ch = hash.Substring(len - 1, 1);
+            Console.WriteLine(ch);
+
+            int really = 0;
+            //1:单，2:双
+            foreach (char small in smalls)
+            {
+                if (small.ToString() == ch)
+                {
+                    really = 1;
+                    break;
+                }
+            }
+
+            foreach (char big in bigs)
+            {
+                if (big.ToString() == ch)
+                {
+                    really = 2;
+                    break;
+                }
+            }
+
+            if (guess == really)
+                ret = 1;
+            else
+                ret = 2;
+            return ret;
+        }
+
+        internal JObject setSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
+        {
+            JObject ret = new JObject();
+
+            DateTime dt = DateTime.Now;
+            string str = dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
+            Console.WriteLine(str);
+            string findFliter = "{asset:'" + assetID + "',addr:'" + addr + "',key:'" + str + "'}";
+            BsonDocument queryBson = BsonDocument.Parse(findFliter);
+
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+            var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
+            List<NEP55.GoodsSign> queryBsonList = collectionPro.Find(queryBson).ToList();
+            
+            bool result = false;
+            if (queryBsonList.Count >= 1)
+            {
+                NEP55.GoodsSign sign = queryBsonList[0];
+                sign.status = 1;
+                collectionPro.ReplaceOne(queryBson, sign);
+                result = true;
+            }
+            ret.Add("result", result);
+            return ret;
+        }
+
+        internal JObject setGuessResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string assetID,string addr, int guess,int mount)
+        {
+            JObject ret = new JObject();
+            DateTime dt = DateTime.Now;
+            string str = dt.ToString();
+
+            bool result = false;
+         
+            JObject result2 = sendTransfer(mongodbConnStr,mongodbDatabase,assetID,neoCliJsonRPCUrl,addr,mount);
+            if ((bool)result2["sendrawtransactionresult"]) {
+                string txid = (string)result2["txid"];
+                //存入猜测数据
+                var client = new MongoClient(mongodbConnStr);
+                var database = client.GetDatabase(mongodbDatabase);
+                //当前高度+1
+                long height = (long)(mh.GetData(mongodbConnStr, mongodbDatabase, "system_counter", "{counter:'block'}")[0]["lastBlockindex"]) + 1;
+
+                NEP55.GoodsGuess gu = new NEP55.GoodsGuess(assetID,str,addr,txid,height,guess,mount ,DateTime.Now);
+                var collectionPro = database.GetCollection<NEP55.GoodsGuess>("goodsGuess");
+                collectionPro.InsertOne(gu);
+                result = true;
+            }
+            ret.Add("result", result);
+            return ret;
+        }
+
+        private string getAccountName(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr) {
+            string name = "";
+            string findFliter = "{asset:'" + assetID +"',addr:'"+addr+"',type:1}";
+            JArray result = mh.GetData(mongodbConnStr, mongodbDatabase, "accOperator", findFliter);
+            if (result.Count > 0) {
+                name = (string)result[0]["name"];
+            }
+            return name;
+        }
+        
 
         private JArray getApproveDetailList(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string username, string addDest, string nameDest)
         {

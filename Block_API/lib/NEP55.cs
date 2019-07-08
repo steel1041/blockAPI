@@ -532,19 +532,55 @@ namespace NEO_Block_API
         [BsonIgnoreExtraElements]
         public class GoodsSign
         {
-            public GoodsSign(string Txid, string Addr, string AssetId,  DateTime Now)
+            public GoodsSign(string Key,string Addr, string AssetId, string Txid, DateTime Now)
             {
-                txid = Txid;
+                key = Key;
                 addr = Addr;
-                assetId = AssetId;
+                asset = AssetId;
+                txid = Txid;
+                status = 1; //0:未发放，1:已发放
                 now = Now;
             }
             public ObjectId _id { get; set; }
-            public string txid { get; set; }
+            public string key { get; set; }
             public string addr { get; set; }
-            public string assetId { get; set; }
+            public string asset { get; set; }
+            public string txid { get; set; }
+            public int status { get; set; }
             public DateTime now { get; set; }
         }
+
+        [BsonIgnoreExtraElements]
+        public class GoodsGuess
+        {
+            public GoodsGuess(string Asset,string Key, string Addr,string Txid,long Blockindex, int Guess,int Mount, DateTime Now)
+            {
+                asset = Asset;
+                key = Key;
+                addr = Addr;
+                txid = Txid;
+                blockindex = Blockindex;
+                hash = "";
+                guess = Guess;//1:单，2:双
+                mount = Mount;
+                result = 0;   //0:未出结果，1:正确,2:不正确
+                status = 0;   //0:未发放，1:已发放
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string asset { get; set; }
+            public string key { get; set; }
+            public string addr { get; set; }
+            public string txid { get; set; }
+            public long blockindex { get; set; }
+            public string hash { get; set; }
+            public int guess { get; set; }
+            public int mount { get; set; }
+            public int result { get; set; }
+            public int status { get; set; }
+            public DateTime now { get; set; }
+        }
+
 
         [BsonIgnoreExtraElements]
         public class RefundFlag
@@ -559,6 +595,25 @@ namespace NEO_Block_API
             public ObjectId _id { get; set; }
             public string txid { get; set; }
             public string addr { get; set; }
+            public int n { get; set; }
+            public DateTime now { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class RefundErrorFlag
+        {
+            public RefundErrorFlag(string Txid, int N, string Addr,string Msg, DateTime Now)
+            {
+                txid = Txid;
+                addr = Addr;
+                n = N;
+                msg = Msg;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string txid { get; set; }
+            public string addr { get; set; }
+            public string msg { get; set; }
             public int n { get; set; }
             public DateTime now { get; set; }
         }

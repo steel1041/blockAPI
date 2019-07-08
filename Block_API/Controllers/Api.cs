@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
 using Block_API.Controllers;
+using ThinNeo;
 
 namespace NEO_Block_API.Controllers
 {
@@ -36,6 +37,7 @@ namespace NEO_Block_API.Controllers
         Contract ct = new Contract();
         Claim claim = new Claim();
         Business bu = new Business();
+        Transaction tr = new Transaction();
 
         public Api(string node) {
             netnode = node;
@@ -1373,17 +1375,82 @@ namespace NEO_Block_API.Controllers
                         result = bu.getGoodsBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, addr, assetID, true);
                         break;
                     case "getSignForAdd":
+                        addr = (string)req.@params[0];
+                        result = getJAbyJ(bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashTokenized.formatHexStr(),addr));
+                        break;
+                    case "getSignByStatus":
+                        if (req.@params.Count() == 3)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            findFliter = "{asset:'" + assetID + "'}";
+                            sortStr = "{'now':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsSign", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+
+                        }
+                        else if (req.@params.Count() == 4)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
+                            sortStr = "{'now':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsSign", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        break;
+                    case "setSignForAdd":
                         assetID = ((string)req.@params[0]).formatHexStr();
                         addr = (string)req.@params[1];
-                        result = getJAbyJ(bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal,assetID,addr));
+                        result = getJAbyJ(bu.setSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr));
                         break;
                     case "setRefundFlagByTxid":
-                        txid = ((string)req.@params[0]).formatHexStr();
+                        JArray arrays = (JArray)req.@params[0];
                         addr = (string)req.@params[1];
-                        int n = int.Parse(req.@params[2].ToString());
-
-                        result = getJAbyJ(bu.setRefundFlagByTxid(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, txid,n,addr));
+                        result = getJAbyJ(bu.setRefundFlagByTxid(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, arrays,addr));
                         break;
+                    case "setRefundErrorFlagByTxid":
+                        arrays = (JArray)req.@params[0];
+                        addr = (string)req.@params[1];
+                        string msg = (string)req.@params[2];
+                        result = getJAbyJ(bu.setRefundErrorFlagByTxid(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, arrays, addr,msg));
+                        break;
+                    case "setGuessResult"://设置猜测单双
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        int ret = int.Parse((string)req.@params[2]);
+                        mount = int.Parse((string)req.@params[3]);
+                        result = getJAbyJ(bu.setGuessResult(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID,addr, ret,mount));
+                        break;
+                    case "getGuessByStatus"://查询记录
+                        if (req.@params.Count() == 3)//查询地址下所有猜测记录
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{'addr':'" + addr + "'}";
+                            sortStr = "{'now':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+
+                        }
+                        else if (req.@params.Count() == 4)//查询猜测结果为正确的记录
+                        {                               
+                            addr = (string)req.@params[0];
+                            ret = int.Parse((string)req.@params[1]);
+                            findFliter = "{'addr':'" + addr + "','result':" + ret + "}";
+                            sortStr = "{'now':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+                        }
+                        else if (req.@params.Count() == 5)//查询猜测结果为正确的且还未发放的记录
+                        {
+                            addr = (string)req.@params[0];
+                            ret = int.Parse((string)req.@params[1]);
+                            int status = int.Parse((string)req.@params[2]);
+                            findFliter = "{'addr':'" + addr + "','result':" + ret +",'status':"+ status +"}";
+                            sortStr = "{'now':-1}";
+                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
+                        }
+                        break;
+                    case "setGuessStatus"://设置发放记录
+                        result = getJAbyJ(bu.ProcessGoodsGuessInfo(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashTokenized.formatHexStr()));
+                        break;
+
+
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)
                 {
