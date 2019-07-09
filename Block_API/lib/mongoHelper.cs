@@ -16,10 +16,12 @@ namespace NEO_Block_API.lib
         public string mongodbConnStr_testnet = string.Empty;
         public string mongodbDatabase_testnet = string.Empty;
         public string neoCliJsonRPCUrl_testnet = string.Empty;
+        public string neoCliJsonRPCUrl_local_testnet = string.Empty;
 
         public string mongodbConnStr_mainnet = string.Empty;
         public string mongodbDatabase_mainnet = string.Empty;
         public string neoCliJsonRPCUrl_mainnet = string.Empty;
+        public string neoCliJsonRPCUrl_local_mainnet = string.Empty;   //本地节点服务
         public string neoRpcUrl_mainnet = string.Empty;  //第三方RPC服务
 
         public string mongodbConnStr_privatenet = string.Empty;
@@ -29,6 +31,7 @@ namespace NEO_Block_API.lib
         public string mongodbConnStr_pri = string.Empty;
         public string mongodbDatabase_pri = string.Empty;
         public string neoCliJsonRPCUrl_pri = string.Empty;
+        public string neoCliJsonRPCUrl_local_pri = string.Empty;
 
         public string mongodbConnStr_swnet = string.Empty;
         public string mongodbDatabase_swnet = string.Empty;
@@ -46,10 +49,12 @@ namespace NEO_Block_API.lib
             mongodbConnStr_testnet = config["mongodbConnStr_testnet"];
             mongodbDatabase_testnet = config["mongodbDatabase_testnet"];
             neoCliJsonRPCUrl_testnet = config["neoCliJsonRPCUrl_testnet"];
+            neoCliJsonRPCUrl_local_testnet = config["neoCliJsonRPCUrl_local_testnet"];
 
             mongodbConnStr_mainnet = config["mongodbConnStr_mainnet"];
             mongodbDatabase_mainnet = config["mongodbDatabase_mainnet"];
             neoCliJsonRPCUrl_mainnet = config["neoCliJsonRPCUrl_mainnet"];
+            neoCliJsonRPCUrl_local_mainnet = config["neoCliJsonRPCUrl_local_mainnet"];
             neoRpcUrl_mainnet = config["neoRpcUrl_mainnet"];
                 
             mongodbConnStr_privatenet = config["mongodbConnStr_privatenet"];
@@ -59,6 +64,7 @@ namespace NEO_Block_API.lib
             mongodbConnStr_pri = config["mongodbConnStr_pri"];
             mongodbDatabase_pri = config["mongodbDatabase_pri"];
             neoCliJsonRPCUrl_pri = config["neoCliJsonRPCUrl_pri"];
+            neoCliJsonRPCUrl_local_pri = config["neoCliJsonRPCUrl_local_pri"];
 
             mongodbConnStr_swnet = config["mongodbConnStr_swnet"];
             mongodbDatabase_swnet = config["mongodbDatabase_swnet"];
@@ -286,7 +292,7 @@ namespace NEO_Block_API.lib
 
             string strData = Newtonsoft.Json.JsonConvert.SerializeObject(Jdata);
             BsonDocument bson = BsonDocument.Parse(strData);
-            bson.Add("updateTime", DateTime.Now);
+            //bson.Add("updateTime", DateTime.Now);
 
             UpdateResult result = collection.UpdateOne("{'" + key + "':'" + value + "'}", "{$set:"+bson+"}");
             if (result.ModifiedCount > 0 || result.MatchedCount > 0)

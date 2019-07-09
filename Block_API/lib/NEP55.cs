@@ -351,6 +351,273 @@ namespace NEO_Block_API
             }
         }
 
+        [BsonIgnoreExtraElements]
+        public class MintSNEO
+        {
+            public MintSNEO(int Blockindex, string Txid,string From,string To,int Value, DateTime time)
+            {
+                blockindex = Blockindex;
+                txid = Txid;
+                from = From;
+                to = To;
+                blocktime = time;
+                value = Value;
+                remainVal = Value;
+            }
+            public ObjectId _id { get; set; }
+            public int blockindex { get; set; }
+            public string from { get; set; }
+            public string to { get; set; }
+            public string txid { get; set; }
+            public decimal value { get; set; }
+            public decimal remainVal { get; set; }
+            public DateTime blocktime { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class MintGas
+        {
+            public MintGas(int Startindex,int Endindex, string Txid, string From,int Value,decimal Gas,DateTime time)
+            {
+                startindex = Startindex;
+                endindex = Endindex;
+                txid = Txid;
+                from = From;
+                blocktime = time;
+                value = Value;
+                gas = Gas;
+                status = 1;
+                claimTime = time;
+            }
+            public ObjectId _id { get; set; }
+            public int startindex { get; set; }
+            public int endindex { get; set; }
+            public string from { get; set; }
+            public string txid { get; set; }
+            public decimal value { get; set; }
+            public decimal gas { get; set; }
+            public int status { get; set; }
+            public DateTime blocktime { get; set; }
+            public DateTime claimTime { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class HasSendGas
+        {
+            public HasSendGas(string Addr,decimal Gas)
+            {
+                addr = Addr;
+                gas = Gas;
+            }
+            public ObjectId _id { get; set; }
+            public string addr { get; set; }
+            public decimal gas { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class Staticdata
+        {
+            public Staticdata(decimal SdusdTotal, decimal LockedTotal, decimal SdsFeeTotal, decimal MortgageRate, decimal PredictFeeTotal,
+                decimal NeoPrice, decimal Sdsprice, long SarCount, long SdusdCount, long SdusdTransCount,string DateKey,DateTime Now)
+            {
+                sdusdTotal = SdusdTotal;            //sdusd发行总量
+                lockedTotal = LockedTotal;          //neo抵押量
+                sdsFeeTotal = SdsFeeTotal;          //sds已收手续费
+                mortgageRate = MortgageRate;        //抵押率
+                predictFeeTotal = PredictFeeTotal;  //预计sds手续费
+                neoPrice = NeoPrice;                //neo价格，美元
+                sdsPrice = Sdsprice;                //sds价格,美元
+                sarCount = SarCount;
+                sdusdCount = SdusdCount;
+                sdusdTransCount = SdusdTransCount;
+                dateKey = DateKey;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public decimal sdusdTotal { get; set; }
+            public decimal lockedTotal { get; set; }
+            public decimal sdsFeeTotal { get; set; }
+            public decimal mortgageRate { get; set; }
+            public decimal predictFeeTotal { get; set; }
+            public decimal neoPrice { get; set; }
+            public decimal sdsPrice { get; set; }
+            public long sarCount { get; set; }
+            public long sdusdCount { get; set; }
+            public long sdusdTransCount { get; set; }
+            public string dateKey { get; set; }
+            public DateTime now { get; set; }
+
+        }
+
+        [BsonIgnoreExtraElements]
+        public class BonusRecord
+        {
+            public BonusRecord(string Id,string Addr,decimal LockedShare, decimal Total, DateTime Now)
+            {
+                batchId = Id;            
+                addr = Addr;
+                lockedShare = LockedShare;         
+                total = Total;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string batchId { get; set; }
+            public string addr { get; set; }
+            public decimal lockedShare { get; set; }
+            public decimal total { get; set; }
+            public DateTime now { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class GoodsTransfer
+        {
+            public GoodsTransfer(JObject tfJ)
+            {
+                blockindex = (int)tfJ["blockindex"];
+                name = (string)tfJ["name"];
+                txid = (string)tfJ["txid"];
+                n = (int)tfJ["n"];
+                asset = (string)tfJ["asset"];
+                from = (string)tfJ["from"];
+                to = (string)tfJ["to"];
+                value = (decimal)tfJ["value"];
+                //blocktime = (DateTime)tfJ["blocktime"];
+            }
+
+            public GoodsTransfer(int Blockindex, string Name, string Txid, int N, JObject notification, int decimals, DateTime time)
+            {
+                blockindex = Blockindex;
+                txid = Txid;
+                n = N;
+                name = Name;
+                asset = (string)notification["contract"];
+
+                JArray JA = (JArray)notification["state"]["value"];
+
+                from = getAddrFromScriptHash((string)JA[2]["value"]);
+                to = getAddrFromScriptHash((string)JA[3]["value"]);
+
+                string valueType = (string)JA[4]["type"];
+                string valueString = (string)JA[4]["value"];
+                if (valueType == "ByteArray")//标准nep5
+                {
+                    value = decimal.Parse(getNumStrFromHexStr(valueString, 0));
+                }
+                else if (valueType == "Integer")//变种nep5
+                {
+                    value = decimal.Parse(getNumStrFromIntStr(valueString, 0));
+                }
+                else//未知情况用-1表示
+                {
+                    value = -1;
+                }
+
+                blocktime = time;
+
+            }
+
+            public ObjectId _id { get; set; }
+            public int blockindex { get; set; }
+            public string name { get; set; }
+            public string txid { get; set; }
+            public int n { get; set; }
+            public string asset { get; set; }
+            public string from { get; set; }
+            public string to { get; set; }
+            public decimal value { get; set; }
+            public DateTime blocktime { get; set; }
+        }
+
+
+        [BsonIgnoreExtraElements]
+        public class GoodsSign
+        {
+            public GoodsSign(string Key,string Addr, string AssetId, string Txid, DateTime Now)
+            {
+                key = Key;
+                addr = Addr;
+                asset = AssetId;
+                txid = Txid;
+                status = 1; //0:未发放，1:已发放
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string key { get; set; }
+            public string addr { get; set; }
+            public string asset { get; set; }
+            public string txid { get; set; }
+            public int status { get; set; }
+            public DateTime now { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class GoodsGuess
+        {
+            public GoodsGuess(string Asset,string Key, string Addr,string Txid,long Blockindex, int Guess,int Mount, DateTime Now)
+            {
+                asset = Asset;
+                key = Key;
+                addr = Addr;
+                txid = Txid;
+                blockindex = Blockindex;
+                hash = "";
+                guess = Guess;//1:单，2:双
+                mount = Mount;
+                result = 0;   //0:未出结果，1:正确,2:不正确
+                status = 0;   //0:未发放，1:已发放
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string asset { get; set; }
+            public string key { get; set; }
+            public string addr { get; set; }
+            public string txid { get; set; }
+            public long blockindex { get; set; }
+            public string hash { get; set; }
+            public int guess { get; set; }
+            public int mount { get; set; }
+            public int result { get; set; }
+            public int status { get; set; }
+            public DateTime now { get; set; }
+        }
+
+
+        [BsonIgnoreExtraElements]
+        public class RefundFlag
+        {
+            public RefundFlag(string Txid,int N,string Addr,DateTime Now)
+            {
+                txid = Txid;
+                addr = Addr;
+                n = N;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string txid { get; set; }
+            public string addr { get; set; }
+            public int n { get; set; }
+            public DateTime now { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class RefundErrorFlag
+        {
+            public RefundErrorFlag(string Txid, int N, string Addr,string Msg, DateTime Now)
+            {
+                txid = Txid;
+                addr = Addr;
+                n = N;
+                msg = Msg;
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string txid { get; set; }
+            public string addr { get; set; }
+            public string msg { get; set; }
+            public int n { get; set; }
+            public DateTime now { get; set; }
+        }
+
         private static string getAddrFromScriptHash(string scripitHash)
         {
             if (scripitHash != string.Empty)

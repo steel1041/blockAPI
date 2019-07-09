@@ -38,6 +38,19 @@ namespace NEO_Block_API
             public string balance { get; set; }
         }
 
+        public class MintSNEOTemp
+        {
+            public MintSNEOTemp(string Addr,string Txid,int RemainVal)
+            {
+                addr = Addr;
+                txid = Txid;
+                remainVal = RemainVal;
+            }
+            public string addr { get; set; }
+            public string txid { get; set; }
+            public int remainVal { get; set; }
+        }
+
         [BsonIgnoreExtraElements]
         public class Asset
         {
@@ -163,7 +176,7 @@ namespace NEO_Block_API
         }
 
         //根据精度处理小数点（大整数模式处理）
-        private static string changeDecimals(BigInteger value, int decimals)
+        public static string changeDecimals(BigInteger value, int decimals)
         {
             BigInteger bi = BigInteger.DivRem(value, BigInteger.Pow(10, decimals), out BigInteger remainder);
             string numStr = bi.ToString();
