@@ -1835,7 +1835,7 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        internal JObject getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
+        internal JArray getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
         {
             JObject ret = new JObject();
             //db.goodsTransfer.find({"blocktime":{"$gte":ISODate("2019-06-26T00:00:00.000Z"),"$lte":ISODate("2019-06-26T23:59:59.000Z")}});
@@ -1846,33 +1846,42 @@ namespace Block_API.Controllers
             string findFliter = "{asset:'" + assetID + "',addr:'" + addr +"',now:{'$gte':ISODate('"+ str+ "T00:00:00.000Z'),'$lte':ISODate('" + str+ "T23:59:59.000Z')}}";
             JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
 
-            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
-            //转账发送物品
-            byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
-            byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
-            string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
-            string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID),
-                 "transfer",
-                "(str)SD-NEXT",
-                "(addr)" + address,
-                "(addr)" + addr,
-                "(int)100000000");
-
-            JObject result2 = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
             bool result = false;
-            if (arrays.Count == 0 && (bool)result2["sendrawtransactionresult"] == true)
+            if (arrays.Count == 0)
             {
-                string txid = (string)result2["txid"];
-                //存入签收数据
-                var client = new MongoClient(mongodbConnStr);
-                var database = client.GetDatabase(mongodbDatabase);
-                NEP55.GoodsSign sign = new NEP55.GoodsSign(str,addr, assetID, txid,DateTime.Now);
-                var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
-                collectionPro.InsertOne(sign);
-                result = true;
+                string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+                //转账发送物品
+                byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
+                byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
+                string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
+              
+
+                string username = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, address);
+                string othername = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr);
+
+                string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID), "transfer",
+                "(addr)" + address,
+                "(str)" + username,
+                "(str)" + othername,
+                "(str)nep55",
+                "(str)SD-NEXT",
+                "(int)1000000000");
+
+                JObject result2 = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+                if ((bool)result2["sendrawtransactionresult"])
+                {
+                    string txid = (string)result2["txid"];
+                    //存入签收数据
+                    var client = new MongoClient(mongodbConnStr);
+                    var database = client.GetDatabase(mongodbDatabase);
+                    NEP55.GoodsSign sign = new NEP55.GoodsSign(str, addr, assetID, txid, DateTime.Now);
+                    var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
+                    collectionPro.InsertOne(sign);
+                    result = true;
+                }
             }
             ret.Add("result",result);
-            return ret;
+            return mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
         }
 
         private JObject sendTransfer(string mongodbConnStr,string mongodbDatabase, string assetID,string neoCliJsonRPCUrl,string addr,int mount) {
@@ -1890,6 +1899,7 @@ namespace Block_API.Controllers
                 ret.Add("sendrawtransactionresult", false);
                 return ret;
             }
+            //判断是否有余额以及授权
 
             string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID), "userTransfer",
             "(addr)" + address,
@@ -1971,21 +1981,35 @@ namespace Block_API.Controllers
                         oper.status = 1;
                         string findFliter = "{addr:'" + addr + "',txid:'" + txid + "'}";
 
-                        //猜中的则进行双倍
-                        string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
-                        //转账发送物品
-                        byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
-                        byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
-                        string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
+                        if (oper.result == 1) {
+                            //猜中的则进行双倍
+                            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+                            //转账发送物品
+                            byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
+                            byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
+                            string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
 
-                        string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(token), "transfer",
-                        "(str)SD-NEXT",
-                        "(addr)"+address,
-                        "(addr)"+addr,
-                        "(int)" + 2*mount * ten_pow);
+                            string username = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, token, address);
+                            string othername = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, token, addr);
 
-                         ret = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
-                         collBson.ReplaceOne(findFliter, oper);
+                            string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(token), "transfer",
+                            "(addr)" + address,
+                            "(str)" + username,
+                            "(str)" + othername,
+                            "(str)nep55",
+                            "(str)SD-NEXT",
+                            "(int)" + 2 * mount * ten_pow);
+
+                            ret = tr.sendrawtransaction(neoCliJsonRPCUrl, rawdata);
+                            if ((bool)ret["sendrawtransactionresult"])
+                            {
+                                //记录下赢的转账txid
+                                txid = (string)ret["txid"];
+                                oper.wintxid = txid;
+                            }
+                        }
+                        collBson.ReplaceOne(findFliter, oper);
+
                     }
 
                 }
@@ -2076,7 +2100,7 @@ namespace Block_API.Controllers
                 //当前高度+1
                 long height = (long)(mh.GetData(mongodbConnStr, mongodbDatabase, "system_counter", "{counter:'block'}")[0]["lastBlockindex"]) + 1;
 
-                NEP55.GoodsGuess gu = new NEP55.GoodsGuess(assetID,str,addr,txid,height,guess,mount ,DateTime.Now);
+                NEP55.GoodsGuess gu = new NEP55.GoodsGuess(assetID,str,addr,txid,height,guess,mount,DateTime.Now);
                 var collectionPro = database.GetCollection<NEP55.GoodsGuess>("goodsGuess");
                 collectionPro.InsertOne(gu);
                 result = true;

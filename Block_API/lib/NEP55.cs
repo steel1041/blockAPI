@@ -553,7 +553,7 @@ namespace NEO_Block_API
         [BsonIgnoreExtraElements]
         public class GoodsGuess
         {
-            public GoodsGuess(string Asset,string Key, string Addr,string Txid,long Blockindex, int Guess,int Mount, DateTime Now)
+            public GoodsGuess(string Asset,string Key, string Addr,string Txid,long Blockindex, int Guess,int Mount,DateTime Now)
             {
                 asset = Asset;
                 key = Key;
@@ -565,6 +565,7 @@ namespace NEO_Block_API
                 mount = Mount;
                 result = 0;   //0:未出结果，1:正确,2:不正确
                 status = 0;   //0:未发放，1:已发放
+                wintxid = "";
                 now = Now;
             }
             public ObjectId _id { get; set; }
@@ -578,6 +579,7 @@ namespace NEO_Block_API
             public int mount { get; set; }
             public int result { get; set; }
             public int status { get; set; }
+            public string wintxid { get; set; }
             public DateTime now { get; set; }
         }
 

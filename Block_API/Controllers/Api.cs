@@ -1265,7 +1265,6 @@ namespace NEO_Block_API.Controllers
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "operatedLock", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
                         break;
-                    
                     case "statcDataProcess":
                         result = getJAbyJ(bu.statcDataProcess(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashSDUSD.formatHexStr(), hashSNEO.formatHexStr(), hashSAR4C.formatHexStr(), hashORACLE.formatHexStr(), addrSAR4C, oldAddrSAR4C));
                         break;
@@ -1375,8 +1374,20 @@ namespace NEO_Block_API.Controllers
                         result = bu.getGoodsBalance(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, addr, assetID, true);
                         break;
                     case "getSignForAdd":
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
+                        result = bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID, addr);
+                        break;
+                    case "getSignInfo":
                         addr = (string)req.@params[0];
-                        result = getJAbyJ(bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashTokenized.formatHexStr(),addr));
+                        DateTime dt = DateTime.Now;
+                        string str = dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
+                        findFliter = "{asset:'" + hashTokenized.formatHexStr() + "',addr:'" + addr + "',now:{'$gte':ISODate('" + str + "T00:00:00.000Z'),'$lte':ISODate('" + str + "T23:59:59.000Z')}}";
+                        result =  mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
                         break;
                     case "getSignByStatus":
                         if (req.@params.Count() == 3)
@@ -1447,7 +1458,12 @@ namespace NEO_Block_API.Controllers
                         }
                         break;
                     case "setGuessStatus"://设置发放记录
-                        result = getJAbyJ(bu.ProcessGoodsGuessInfo(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, hashTokenized.formatHexStr()));
+                        if (neoCliJsonRPCUrlLocal.Length <= 0)
+                        {
+                            neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
+                        }
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        result = getJAbyJ(bu.ProcessGoodsGuessInfo(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID));
                         break;
 
 
