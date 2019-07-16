@@ -37,6 +37,7 @@ namespace Block_API.Controllers
         public string hashSAR4B_prinet = string.Empty;
         public string hashSDS_prinet = string.Empty;
         public string hashTokenized_prinet = string.Empty;
+        public string wif_prinet = string.Empty;
 
         public string hashSDUSD_testnet = string.Empty;
         public string hashSAR4C_testnet = string.Empty;
@@ -47,6 +48,7 @@ namespace Block_API.Controllers
         public string hashSAR4B_testnet = string.Empty;
         public string hashSDS_testnet = string.Empty;
         public string hashTokenized_testnet = string.Empty;
+        public string wif_testnet = string.Empty;
 
         public string hashSDUSD_mainnet = string.Empty;
         public string hashSAR4C_mainnet = string.Empty;
@@ -57,6 +59,7 @@ namespace Block_API.Controllers
         public string hashSAR4B_mainnet = string.Empty;
         public string hashSDS_mainnet = string.Empty;
         public string hashTokenized_mainnet = string.Empty;
+        public string wif_mainnet = string.Empty;
 
         private const int EIGHT_ZERO = 100000000;
 
@@ -98,6 +101,7 @@ namespace Block_API.Controllers
             oldAddrSAR4C_prinet = config["oldAddrSAR4C_prinet"];
             hashSDS_prinet = config["hashSDS_prinet"];
             hashTokenized_prinet = config["hashTokenized_prinet"];
+            wif_prinet = config["wif_prinet"];
 
             hashSDUSD_testnet = config["hashSDUSD_testnet"];
             hashSAR4C_testnet = config["hashSAR4C_testnet"];
@@ -108,6 +112,7 @@ namespace Block_API.Controllers
             oldAddrSAR4C_testnet = config["oldAddrSAR4C_testnet"];
             hashSDS_testnet = config["hashSDS_testnet"];
             hashTokenized_testnet = config["hashTokenized_testnet"];
+            wif_testnet = config["wif_testnet"];
 
             hashSDUSD_mainnet = config["hashSDUSD_mainnet"];
             hashSAR4C_mainnet = config["hashSAR4C_mainnet"];
@@ -118,6 +123,7 @@ namespace Block_API.Controllers
             oldAddrSAR4C_mainnet = config["oldAddrSAR4C_mainnet"];
             hashSDS_mainnet = config["hashSDS_mainnet"];
             hashTokenized_mainnet = config["hashTokenized_mainnet"];
+            wif_mainnet = config["wif_mainnet"];
         }
 
         public JObject getNgdBlockcount(string neoRpcUrl_mainnet)
@@ -1835,12 +1841,15 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        internal JArray getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr)
+        internal JArray getSignForAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr,string wif)
         {
             JObject ret = new JObject();
             //db.goodsTransfer.find({"blocktime":{"$gte":ISODate("2019-06-26T00:00:00.000Z"),"$lte":ISODate("2019-06-26T23:59:59.000Z")}});
-            
+            //mongodb中存储的时间是标准时间UTC +0:00  而咱们中国的失去是+8.00 
+            //当前时间减去8h
             DateTime dt = DateTime.Now;
+            dt.AddHours(-8);
+
             string str= dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
             Console.WriteLine(str);
             string findFliter = "{asset:'" + assetID + "',addr:'" + addr +"',now:{'$gte':ISODate('"+ str+ "T00:00:00.000Z'),'$lte':ISODate('" + str+ "T23:59:59.000Z')}}";
@@ -1849,12 +1858,10 @@ namespace Block_API.Controllers
             bool result = false;
             if (arrays.Count == 0)
             {
-                string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
                 //转账发送物品
                 byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
                 byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
                 string address = ThinNeo.Helper.GetAddressFromPublicKey(pubkey);
-              
 
                 string username = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, address);
                 string othername = getAccountName(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr);
@@ -1874,7 +1881,7 @@ namespace Block_API.Controllers
                     //存入签收数据
                     var client = new MongoClient(mongodbConnStr);
                     var database = client.GetDatabase(mongodbDatabase);
-                    NEP55.GoodsSign sign = new NEP55.GoodsSign(str, addr, assetID, txid, DateTime.Now);
+                    NEP55.GoodsSign sign = new NEP55.GoodsSign(str, addr, assetID, txid,"nep55", "SD-NEXT",10,DateTime.Now);
                     var collectionPro = database.GetCollection<NEP55.GoodsSign>("goodsSign");
                     collectionPro.InsertOne(sign);
                     result = true;
@@ -1884,9 +1891,9 @@ namespace Block_API.Controllers
             return mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
         }
 
-        private JObject sendTransfer(string mongodbConnStr,string mongodbDatabase, string assetID,string neoCliJsonRPCUrl,string addr,int mount) {
+        private JObject sendTransfer(string mongodbConnStr,string mongodbDatabase, string assetID,string neoCliJsonRPCUrl,string addr,int mount,string wif) {
             JObject ret = new JObject();
-            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+            //string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
             //转账发送物品
             byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
             byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
@@ -1938,7 +1945,7 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        internal JObject ProcessGoodsGuessInfo(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string token)
+        internal JObject ProcessGoodsGuessInfo(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string token,string wif)
         {
             JObject ret = new JObject();
             //查出所有未有猜测结果的goodsGuess数据
@@ -1983,7 +1990,6 @@ namespace Block_API.Controllers
 
                         if (oper.result == 1) {
                             //猜中的则进行双倍
-                            string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
                             //转账发送物品
                             byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
                             byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
@@ -2061,6 +2067,7 @@ namespace Block_API.Controllers
             JObject ret = new JObject();
 
             DateTime dt = DateTime.Now;
+            dt.AddHours(-8);
             string str = dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
             Console.WriteLine(str);
             string findFliter = "{asset:'" + assetID + "',addr:'" + addr + "',key:'" + str + "'}";
@@ -2083,7 +2090,7 @@ namespace Block_API.Controllers
             return ret;
         }
 
-        internal JObject setGuessResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string assetID,string addr, int guess,int mount)
+        internal JObject setGuessResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string assetID,string addr, int guess,int mount,string wif)
         {
             JObject ret = new JObject();
             DateTime dt = DateTime.Now;
@@ -2091,7 +2098,7 @@ namespace Block_API.Controllers
 
             bool result = false;
          
-            JObject result2 = sendTransfer(mongodbConnStr,mongodbDatabase,assetID,neoCliJsonRPCUrl,addr,mount);
+            JObject result2 = sendTransfer(mongodbConnStr,mongodbDatabase,assetID,neoCliJsonRPCUrl,addr,mount,wif);
             if ((bool)result2["sendrawtransactionresult"]) {
                 string txid = (string)result2["txid"];
                 //存入猜测数据
@@ -2234,7 +2241,7 @@ namespace Block_API.Controllers
         internal JArray getAccBalanceByAdd(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr,string username)
         {
             JArray ret = new JArray();
-            string findFliter = "{'asset':'" + assetID + "','addr':'"+addr+"','type':2}";
+            string findFliter = "{'asset':'" + assetID + "','addr':'"+addr+ "',$or:[{'type':2},{'type':3}]}";
             JArray arrays = mh.GetData(mongodbConnStr, mongodbDatabase, "accOperator",findFliter);
             Dictionary<string, string> names = new Dictionary<string, string>();
             foreach (JObject ob in arrays) {

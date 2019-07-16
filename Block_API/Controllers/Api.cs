@@ -30,6 +30,7 @@ namespace NEO_Block_API.Controllers
         public string oldAddrSAR4C { get; set; }
         public string hashSDS { get; set; }
         public string hashTokenized { get; set; }
+        public string wif { get; set; }
 
         httpHelper hh = new httpHelper();
         mongoHelper mh = new mongoHelper();
@@ -56,6 +57,7 @@ namespace NEO_Block_API.Controllers
                     oldAddrSAR4C = bu.oldAddrSAR4C_testnet;
                     hashSDS = bu.hashSDS_testnet;
                     hashTokenized = bu.hashTokenized_testnet;
+                    wif = bu.wif_testnet;
                     break;
                 case "mainnet":
                     mongodbConnStr = mh.mongodbConnStr_mainnet;
@@ -72,6 +74,7 @@ namespace NEO_Block_API.Controllers
                     oldAddrSAR4C = bu.oldAddrSAR4C_mainnet;
                     hashSDS = bu.hashSDS_mainnet;
                     hashTokenized = bu.hashTokenized_mainnet;
+                    wif = bu.wif_mainnet;
                     break;
                 case "swnet":
                     mongodbConnStr = mh.mongodbConnStr_swnet;
@@ -92,6 +95,7 @@ namespace NEO_Block_API.Controllers
                     oldAddrSAR4C = bu.oldAddrSAR4C_prinet;
                     hashSDS = bu.hashSDS_prinet;
                     hashTokenized = bu.hashTokenized_prinet;
+                    wif = bu.wif_prinet;
                     break;
             }
         }
@@ -1380,14 +1384,16 @@ namespace NEO_Block_API.Controllers
                         }
                         assetID = ((string)req.@params[0]).formatHexStr();
                         addr = (string)req.@params[1];
-                        result = bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID, addr);
+                        result = bu.getSignForAdd(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID, addr,wif);
                         break;
                     case "getSignInfo":
-                        addr = (string)req.@params[0];
+                        assetID = ((string)req.@params[0]).formatHexStr();
+                        addr = (string)req.@params[1];
                         DateTime dt = DateTime.Now;
+                        dt.AddHours(-8);
                         string str = dt.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo);
-                        findFliter = "{asset:'" + hashTokenized.formatHexStr() + "',addr:'" + addr + "',now:{'$gte':ISODate('" + str + "T00:00:00.000Z'),'$lte':ISODate('" + str + "T23:59:59.000Z')}}";
-                        result =  mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
+                        findFliter = "{asset:'" + assetID + "',addr:'" + addr + "',now:{'$gte':ISODate('" + str + "T00:00:00.000Z'),'$lte':ISODate('" + str + "T23:59:59.000Z')}}";
+                        result = mh.GetData(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter);
                         break;
                     case "getSignByStatus":
                         if (req.@params.Count() == 3)
@@ -1406,6 +1412,21 @@ namespace NEO_Block_API.Controllers
                             sortStr = "{'now':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsSign", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
+                        break;
+                    case "getSignCountByStatus":    //记录总条数
+                        if (req.@params.Count() == 1)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            findFliter = "{asset:'" + assetID + "'}";
+
+                        }
+                        else if (req.@params.Count() == 2)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
+                        }
+                        result = getJAbyKV("signcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "goodsSign", findFliter));
                         break;
                     case "setSignForAdd":
                         assetID = ((string)req.@params[0]).formatHexStr();
@@ -1428,34 +1449,43 @@ namespace NEO_Block_API.Controllers
                         addr = (string)req.@params[1];
                         int ret = int.Parse((string)req.@params[2]);
                         mount = int.Parse((string)req.@params[3]);
-                        result = getJAbyJ(bu.setGuessResult(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID,addr, ret,mount));
+                        result = getJAbyJ(bu.setGuessResult(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID,addr, ret,mount,wif));
                         break;
                     case "getGuessByStatus"://查询记录
-                        if (req.@params.Count() == 3)//查询地址下所有猜测记录
+                        if (req.@params.Count() == 4)//查询地址下所有猜测记录
                         {
-                            addr = (string)req.@params[0];
-                            findFliter = "{'addr':'" + addr + "'}";
-                            sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
-
-                        }
-                        else if (req.@params.Count() == 4)//查询猜测结果为正确的记录
-                        {                               
-                            addr = (string)req.@params[0];
-                            ret = int.Parse((string)req.@params[1]);
-                            findFliter = "{'addr':'" + addr + "','result':" + ret + "}";
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
                             sortStr = "{'now':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
+
                         }
-                        else if (req.@params.Count() == 5)//查询猜测结果为正确的且还未发放的记录
+                        else if (req.@params.Count() == 5)//查询猜测结果为正确的记录
                         {
-                            addr = (string)req.@params[0];
-                            ret = int.Parse((string)req.@params[1]);
-                            int status = int.Parse((string)req.@params[2]);
-                            findFliter = "{'addr':'" + addr + "','result':" + ret +",'status':"+ status +"}";
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            ret = int.Parse((string)req.@params[2]);
+                            findFliter = "{addr:'" + addr +"',asset:'"+assetID+"',result:" + ret + "}";
                             sortStr = "{'now':-1}";
                             result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "goodsGuess", sortStr, int.Parse(req.@params[3].ToString()), int.Parse(req.@params[4].ToString()), findFliter);
                         }
+                        break;
+                    case "getGuessCountByStatus":    //记录总条数
+                        if (req.@params.Count() == 2)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            findFliter = "{asset:'" + assetID + "',addr:'" + addr + "'}";
+                        }
+                        else if (req.@params.Count() == 3)
+                        {
+                            assetID = ((string)req.@params[0]).formatHexStr();
+                            addr = (string)req.@params[1];
+                            ret = int.Parse((string)req.@params[2]);
+                            findFliter = "{addr:'" + addr + "',asset:'" + assetID + "',result:" + ret + "}";
+                        }
+                        result = getJAbyKV("guesscount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "goodsGuess", findFliter));
                         break;
                     case "setGuessStatus"://设置发放记录
                         if (neoCliJsonRPCUrlLocal.Length <= 0)
@@ -1463,7 +1493,7 @@ namespace NEO_Block_API.Controllers
                             neoCliJsonRPCUrlLocal = neoCliJsonRPCUrl;
                         }
                         assetID = ((string)req.@params[0]).formatHexStr();
-                        result = getJAbyJ(bu.ProcessGoodsGuessInfo(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID));
+                        result = getJAbyJ(bu.ProcessGoodsGuessInfo(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID,wif));
                         break;
 
 

@@ -532,13 +532,16 @@ namespace NEO_Block_API
         [BsonIgnoreExtraElements]
         public class GoodsSign
         {
-            public GoodsSign(string Key,string Addr, string AssetId, string Txid, DateTime Now)
+            public GoodsSign(string Key,string Addr, string AssetId, string Txid, string Type,string Name,decimal Mount,DateTime Now)
             {
                 key = Key;
                 addr = Addr;
                 asset = AssetId;
                 txid = Txid;
                 status = 1; //0:未发放，1:已发放
+                type = Type;
+                name = Name;
+                mount = Mount;
                 now = Now;
             }
             public ObjectId _id { get; set; }
@@ -547,6 +550,10 @@ namespace NEO_Block_API
             public string asset { get; set; }
             public string txid { get; set; }
             public int status { get; set; }
+            public string type { get; set; }
+            public string name { get; set; }
+            public decimal mount { get; set; }
+       
             public DateTime now { get; set; }
         }
 
