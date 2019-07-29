@@ -1893,7 +1893,7 @@ namespace Block_API.Controllers
 
         private JObject sendTransfer(string mongodbConnStr,string mongodbDatabase, string assetID,string neoCliJsonRPCUrl,string addr,int mount,string wif) {
             JObject ret = new JObject();
-            //string wif = "KzprnMDQHhK7jnJ3dNNq5C2AfJdy58oGyphnZtc6t78NE26nhq7S";
+
             //转账发送物品
             byte[] prikey = ThinNeo.Helper.GetPrivateKeyFromWIF(wif);
             byte[] pubkey = ThinNeo.Helper.GetPublicKeyFromPrivateKey(prikey);
@@ -1907,7 +1907,6 @@ namespace Block_API.Controllers
                 return ret;
             }
             //判断是否有余额以及授权
-
             string rawdata = tr.api_SendbatchTransaction(prikey, new Hash160(assetID), "userTransfer",
             "(addr)" + address,
             "(str)" + username,
@@ -1939,6 +1938,82 @@ namespace Block_API.Controllers
                 NEP55.GoodsGuess guess = queryBsonList[0];
                 guess.status = 1;
                 collectionPro.ReplaceOne(queryBson, guess);
+                result = true;
+            }
+            ret.Add("result", result);
+            return ret;
+        }
+
+        internal JObject addAuctionGoods(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, string assetID, string goodsName)
+        {
+            JObject ret = new JObject();
+
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+
+            NEP55.AuctionGoods gu = new NEP55.AuctionGoods(assetID,goodsName,DateTime.Now);
+            var collectionPro = database.GetCollection<NEP55.AuctionGoods>("auctionGoods");
+            collectionPro.InsertOne(gu);
+
+            ret.Add("result", true);
+            return ret;
+        }
+
+        internal JObject processAuctionResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID)
+        {
+            JObject ret = new JObject();
+
+            //查出所有未有结果的auctionRecord数据
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+
+            var collBson = database.GetCollection<NEP55.AuctionRecord>("auctionRecord");
+            var findBsonBson = BsonDocument.Parse("{result:0}");
+            List<NEP55.AuctionRecord> queryBson = collBson.Find(findBsonBson).ToList();
+
+            if (queryBson.Count > 0)
+            {
+                foreach (NEP55.AuctionRecord oper in queryBson)
+                {
+                    string key = oper.key;
+                    string addr = oper.addr;
+                    string txid = oper.txid;
+                   
+                    int mount = oper.mount;
+                    //根据txid判断是否收到转账，如果没有则表示扣款失败
+                    var coll = database.GetCollection<BsonDocument>("accUserTransfer");
+                    BsonDocument bson = BsonDocument.Parse("{txid:'" + txid + "'}");
+                    var transfers = coll.Find(bson).ToList();
+                    if (transfers.Count <= 0)
+                        continue;
+
+                    string findFliter = "{addr:'" + addr + "',txid:'" + txid + "'}";
+                    oper.result = 1;
+                    collBson.ReplaceOne(findFliter, oper);
+                }
+            }
+            ret.Add("result","true");
+            return ret;
+        }
+
+        internal JObject setAuctionResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string auctionKey, int mount, string wif)
+        {
+            JObject ret = new JObject();
+
+            bool result = false;
+
+            //判断拍卖物品状态及时间
+            JObject result2 = sendTransfer(mongodbConnStr, mongodbDatabase, assetID, neoCliJsonRPCUrl, addr, mount, wif);
+            if ((bool)result2["sendrawtransactionresult"])
+            {
+                string txid = (string)result2["txid"];
+                //存入拍卖数据
+                var client = new MongoClient(mongodbConnStr);
+                var database = client.GetDatabase(mongodbDatabase);
+
+                NEP55.AuctionRecord gu = new NEP55.AuctionRecord(assetID,auctionKey,addr,txid,mount, DateTime.Now);
+                var collectionPro = database.GetCollection<NEP55.AuctionRecord>("auctionRecord");
+                collectionPro.InsertOne(gu);
                 result = true;
             }
             ret.Add("result", result);

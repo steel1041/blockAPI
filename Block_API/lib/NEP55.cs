@@ -590,6 +590,50 @@ namespace NEO_Block_API
             public DateTime now { get; set; }
         }
 
+        [BsonIgnoreExtraElements]
+        public class AuctionGoods
+        {
+            public AuctionGoods(string Asset, string Name,DateTime Now)
+            {
+                asset = Asset;
+                name = Name;
+                mount = 0;    //竞拍价格
+                result = 0;   //0:未开始，1:竞拍结束
+                now = Now;
+                end = Now;    //竞拍结束时间
+            }
+            public ObjectId _id { get; set; }
+            public string asset { get; set; }
+            public string name { get; set; }
+            public decimal mount { get; set; }
+            public int result { get; set; }
+            public DateTime now { get; set; }
+            public DateTime end { get; set; }
+        }
+
+        [BsonIgnoreExtraElements]
+        public class AuctionRecord
+        {
+            public AuctionRecord(string Asset, string Key, string Addr, string Txid,int Mount, DateTime Now)
+            {
+                asset = Asset;
+                key = Key;
+                addr = Addr;
+                txid = Txid;
+                mount = Mount;
+                result = 0;   //0:未出结果，1:正确,2:不正确
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string asset { get; set; }
+            public string key { get; set; }
+            public string addr { get; set; }
+            public string txid { get; set; }
+            public int mount { get; set; }
+            public int result { get; set; }
+            public DateTime now { get; set; }
+        }
+
 
         [BsonIgnoreExtraElements]
         public class RefundFlag
