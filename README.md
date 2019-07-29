@@ -113,6 +113,13 @@
 |request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|address/pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  getAuctionRecordsByName/根据拍卖物名查询拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByName","params": ["aaa",10,1],"id": 1}|name/pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
 
 
 
