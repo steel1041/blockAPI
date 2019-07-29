@@ -92,7 +92,26 @@
 |request         |{"jsonrpc": "2.0","method": "predictFeeTotal","params": [],"id": 1}||
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  addAuctionGoods/增加拍卖物品
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Add auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "addAuctionGoods","params": ["0x1e3482d24740f2629fff407817cdc11bc2f1ae02","bbb"],"id": 1}|goods合约/goods name|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  setAuctionResult/发起拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "setAuctionResult","params": ["0x5fa5aa68cf3330923463351f336f8caf95188ab5","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn","aaa","1"],"id": 1}|account合约/address/goods name/auction mount|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getAuctionByStatus/查询拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|address/pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
 
 
