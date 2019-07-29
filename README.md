@@ -8,23 +8,120 @@
 
 以下所有接口所有环境都通用
 
-###  getblock
-|                |                          |  remark    |
+###  getblock/获取区块高度
+|                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
-|description|Get block number       |  |
-|request          |{"jsonrpc": "2.0","method": "getblockcount","params": [],"id": 1}| params is null|
-|response         |{"jsonrpc":"2.0","id":1,"result":[{"blockcount":"3661001"}]}| |
+|description     |Get block number               |                               |
+|request         |{"jsonrpc": "2.0","method": "getblockcount","params": [],"id": 1}| params is null|
+|response        |{"jsonrpc":"2.0","id":1,"result":[{"blockcount":"3661001"}]}     |               |
 
-###  getnotify
-|                |                          |  remark    |
+###  getnotify/获取日志记录
+|                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
-|description|Get application log by txid      |  |
-|request          |{"jsonrpc": "2.0","method": "getnotify","params": ["f9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c"],"id": 1}| params is txid|
-|response         |{"jsonrpc":"2.0","id":1,"result":[{"txid":"0xf9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c","executions":[{"trigger":"Application","contract":"0x4b5acd30ba7ec77199561afa0bbd49b5e94517da","vmstate":"HALT, BREAK","gas_consumed":"0","stack":[{"type":"Integer","value":"1"}],"notifications":[]}],"blockindex":3639643}]}| |
+|description     |Get application log by txid    |                               |
+|request         |{"jsonrpc": "2.0","method": "getnotify","params":["f9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c"],"id": 1}| params is txid|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                          |                  |
 
-###  getTxByTxid
-|                |                          |  remark    |
+###  getTxByTxid/获取交易详情
+|                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
-|description|Get transaction log by txid      |  |
-|request          |{"jsonrpc": "2.0","method": "getTxByTxid","params": ["f9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c"],"id": 1}| params is txid|
-|response         |{"jsonrpc":"2.0","id":1,"result":[{"txid":"0xf9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c","size":281,"type":"InvocationTransaction","version":1,"attributes":[{"usage":"Remark15","data":"6e656f2d6f6e65"}],"vin":[{"txid":"0x60d1404c2f4008d6cea42ff357c0ad1930c893ce26d1a898527efabafd067ba0","vout":1},{"txid":"0x976ec1556314ebab3c8ad99e133f9aeb56d730a47efabb2b224ddb1b036a474e","vout":0},{"txid":"0x848bb378f103b68d59b4c616f0be8e89b2fc931219a0de849363edccce9f8cd4","vout":0}],"vout":[{"n":0,"asset":"0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b","value":"33","address":"AHgozj1reiiBRh58nhSRUc2pmgLPNTSmcZ"}],"sys_fee":"0","net_fee":"0","scripts":[{"invocation":"40693f36f0f279b7aeff817a9440044599c43228ad692ef9de5d3760cf13e4ae55af49f8bb2c80446b81bb6a4c019a78cc195d06d7e81dd1f06edbd37801d4c664","verification":"2102fd7cbe089912347cfb699518452755db65f8c17d7232f8fd442700d2257986f4ac"}],"script":"51","gas":"0","blockindex":3639643}]}| |
+|description     |Get transaction log by txid    |                               |
+|request         |{"jsonrpc": "2.0","method": "getTxByTxid","params": ["f9f55031239475cff453ca3d8a2b4a61d6ad6cfbbbeae7770f10e3e357528d0c"],"id": 1}| params is txid|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           |                 
+
+###  getsar4CDetailList/获取SAR4B列表详细信息
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar list detail            |                               |
+|request         |{"jsonrpc": "2.0","method": "getsar4CDetailList","params": [1,"0xb4df68fd65a3ce11c7d55325f95845be100b9710",10,1],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           |     
+
+###  getsar4BDetailList/获取SAR4B列表详细信息
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar list detail            |                               |
+|request         |{"jsonrpc": "2.0","method": "getsar4BDetailList","params": ["1","0x203205eef5a81c093d04b5c591d8f2308598caa2",10,1],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           |  
+
+###  getsar4CDetailByAdd/获取SAR4C详细信息
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar detail                 |                               |
+|request         |{"jsonrpc": "2.0","method": "getsar4CDetailByAdd","params": ["AaDEkefkq51LkgVuVd1Y5Gmd6rcsXaneJp","0xb4df68fd65a3ce11c7d55325f95845be100b9710"],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getsar4BDetailByAdd/获取SAR4B详细信息
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar detail                 |                               |
+|request         |{"jsonrpc": "2.0","method": "getsar4BDetailByAdd","params": ["AaDEkefkq51LkgVuVd1Y5Gmd6rcsXaneJp","0xb4df68fd65a3ce11c7d55325f95845be100b9710"],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getsar4COperatedBySAR/获取SAR4C操作记录
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar list detail            |                               |
+|request         |{"jsonrpc": "2.0","method": "getsar4CDetailByAdd","params": ["0x7b4bf9ceeb51142bf7e80c4c082e6479e87f66bfae8238bcbee1da9347892134",100,1],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getStaticReport/获取SAR统计信息
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get static data detail         |                               |
+|request         |{"jsonrpc": "2.0","method": "getStaticReport","params": [],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getUsableUtxoForNEO/获取未被使用过的UTXO
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get utxo list                  |                               |
+|request         |{"jsonrpc": "2.0","method": "getUsableUtxoForNEO","params": [],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  processSARFilterByRate/获取符合条件的SAR
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar list                   |                               |
+|request         |{"jsonrpc": "2.0","method": "processSARFilterByRate","params": [10,160],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  predictFeeTotal/获取预计手续总量
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Get sar list                   |                               |
+|request         |{"jsonrpc": "2.0","method": "predictFeeTotal","params": [],"id": 1}||
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  addAuctionGoods/增加拍卖物品
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |Add auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "addAuctionGoods","params": ["0x1e3482d24740f2629fff407817cdc11bc2f1ae02","bbb"],"id": 1}|goods合约/goods name|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  setAuctionResult/发起拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "setAuctionResult","params": ["0x5fa5aa68cf3330923463351f336f8caf95188ab5","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn","aaa","1"],"id": 1}|account合约/address/goods name/auction mount|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getAuctionByStatus/查询拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|address/pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getAuctionRecordsByName/根据拍卖物名查询拍卖
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |start auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByName","params": ["aaa",10,1],"id": 1}|name/pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+
+
+
+
+
