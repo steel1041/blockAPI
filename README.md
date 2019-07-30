@@ -106,17 +106,24 @@
 |request         |{"jsonrpc": "2.0","method": "setAuctionResult","params": ["0x5fa5aa68cf3330923463351f336f8caf95188ab5","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn","aaa","1"],"id": 1}|account合约/address/goods name/auction mount|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
-###  getAuctionByStatus/查询拍卖
+###  getAuctionByStatus/查询拍卖物品
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
-|description     |start auction goods                   |                               |
-|request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|address/pages/index|
+|description     |query auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": [10,1],"id": 1}|pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
-###  getAuctionRecordsByName/根据拍卖物名查询拍卖
+###  getAuctionRecords/根据地址查询拍卖记录
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
-|description     |start auction goods                   |                               |
+|description     |query auction record                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecords","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|addr/pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
+###  getAuctionRecordsByName/根据拍卖物查询拍卖记录
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |query auction record                   |                               |
 |request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByName","params": ["aaa",10,1],"id": 1}|name/pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
