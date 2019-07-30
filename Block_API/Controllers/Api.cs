@@ -1502,27 +1502,43 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "addAuctionGoods":   //增加拍卖物品
                         assetID = ((string)req.@params[0]).formatHexStr();  //goods合约
-                        string goodsName = (string)req.@params[1];            //goods name
-                        result = getJAbyJ(bu.addAuctionGoods(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID, goodsName));
+                        txid = ((string)req.@params[1]).formatHexStr();            //goods的txid
+                        result = getJAbyJ(bu.addAuctionGoods(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, assetID, txid));
                         break;
                     case "getAuctionByStatus"://查询拍卖物品
                         findFliter = "{}";
+                        int pageCount = 10;
+                        int pageNum = 1;
                         if (req.@params.Count() == 3)
                         {
                             int status = int.Parse((string)req.@params[0]);
+                            pageCount = int.Parse(req.@params[1].ToString());
+                            pageNum = int.Parse(req.@params[2].ToString());
+
                             findFliter = "{status:" + status + "}";
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionGoods", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
-
                         } else if (req.@params.Count() == 2) {
+                            pageCount = int.Parse(req.@params[0].ToString());
+                            pageNum = int.Parse(req.@params[1].ToString());
+
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionGoods", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
                         }
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionGoods", sortStr, pageCount, pageNum, findFliter);
+                        result = bu.getAuctionByStatus(mongodbConnStr, mongodbDatabase, result);
+                        break;
+                    case "getAuctionByStatusCount":
+                        findFliter = "{}";
+                        if (req.@params.Count() == 1)
+                        {
+                            int status = int.Parse((string)req.@params[0]);
+                            findFliter = "{status:" + status + "}";
+                        }
+                        result = getJAbyKV("auctioncount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "auctionGoods", findFliter));
                         break;
                     case "setAuctionResult"://设置拍卖结果
-                        assetID = ((string)req.@params[0]).formatHexStr();
+                        assetID = ((string)req.@params[0]).formatHexStr(); //account合约地址
                         addr = (string)req.@params[1];
-                        string auctionKey = (string)req.@params[2];//拍卖物品
+                        string auctionKey = (string)req.@params[2];//拍卖物品key
                         mount = int.Parse((string)req.@params[3]);//拍卖出价金额
                         result = getJAbyJ(bu.setAuctionResult(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrl, assetID, addr, auctionKey, mount, wif));
                         break;
@@ -1532,36 +1548,72 @@ namespace NEO_Block_API.Controllers
                         break;
                     case "getAuctionRecords"://查询拍卖记录
                         findFliter = "{}";
+                        pageCount = 10;
+                        pageNum = 1;
                         if (req.@params.Count() == 3)
                         {
                             addr = (string)req.@params[0];
                             findFliter = "{addr:'" + addr + "'}";
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
+                            pageCount = int.Parse(req.@params[1].ToString());
+                            pageNum = int.Parse(req.@params[2].ToString());
                         }
                         else if (req.@params.Count() == 2)
                         {
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, int.Parse(req.@params[0].ToString()), int.Parse(req.@params[1].ToString()), findFliter);
+                            pageCount = int.Parse(req.@params[0].ToString());
+                            pageNum = int.Parse(req.@params[1].ToString());
                         }
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr,pageCount, pageNum, findFliter);
+                        break;
+                    case "getAuctionRecordsCount":
+                        findFliter = "{}";
+                        if (req.@params.Count() == 1)
+                        {
+                            addr = (string)req.@params[0];
+                            findFliter = "{addr:'" + addr + "'}";
+                        }
+                        result = getJAbyKV("recordcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "auctionRecord", findFliter));
                         break;
                     case "getAuctionRecordsByName"://查询拍卖记录
                         findFliter = "{}";
+                        pageCount = 10;
+                        pageNum = 1;
                         if (req.@params.Count() == 3)
                         {
                             string key = (string)req.@params[0];
+                            pageCount = int.Parse(req.@params[1].ToString());
+                            pageNum = int.Parse(req.@params[2].ToString());
+
                             findFliter = "{key:'" + key + "'}";
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, int.Parse(req.@params[1].ToString()), int.Parse(req.@params[2].ToString()), findFliter);
                         }
                         else if (req.@params.Count() == 4)
                         {
                             addr = (string)req.@params[0];
                             string key = (string)req.@params[1];
+                            pageCount = int.Parse(req.@params[2].ToString());
+                            pageNum = int.Parse(req.@params[3].ToString());
+
                             findFliter = "{key:'" + key +",addr:'"+addr+"'}";
                             sortStr = "{'now':-1}";
-                            result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, int.Parse(req.@params[2].ToString()), int.Parse(req.@params[3].ToString()), findFliter);
                         }
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, pageCount, pageNum, findFliter);
+                        break;
+                    case "getAuctionRecordsByNameCount":
+                        findFliter = "{}";
+                        if (req.@params.Count() == 1)
+                        {
+                            string key = (string)req.@params[0];
+                            findFliter = "{key:'" + key + "'}";
+                        }
+                        else if (req.@params.Count() == 2)
+                        {
+                            addr = (string)req.@params[0];
+                            string key = (string)req.@params[1];
+                            findFliter = "{key:'" + key + ",addr:'" + addr + "'}";
+                        }
+                        result = getJAbyKV("recordcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "auctionRecord", findFliter));
                         break;
 
                 }
