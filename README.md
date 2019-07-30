@@ -96,14 +96,14 @@
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
 |description     |Add auction goods                   |                               |
-|request         |{"jsonrpc": "2.0","method": "addAuctionGoods","params": ["0x1e3482d24740f2629fff407817cdc11bc2f1ae02","bbb"],"id": 1}|goods合约/goods name|
+|request         |{"jsonrpc": "2.0","method": "addAuctionGoods","params": ["0x1e3482d24740f2629fff407817cdc11bc2f1ae02","0xdbea4a60eab7ef53ca38f4943b8813650b655f5059b59a3836fed3660e3f0d99"],"id": 1}|goods合约/goods txid|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
 ###  setAuctionResult/发起拍卖
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
 |description     |start auction goods                   |                               |
-|request         |{"jsonrpc": "2.0","method": "setAuctionResult","params": ["0x5fa5aa68cf3330923463351f336f8caf95188ab5","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn","aaa","1"],"id": 1}|account合约/address/goods name/auction mount|
+|request         |{"jsonrpc": "2.0","method": "setAuctionResult","params": ["0x5fa5aa68cf3330923463351f336f8caf95188ab5","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn","2019/7/30 17:06:43","1"],"id": 1}|account合约/address/auction key/auction mount|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
 ###  getAuctionByStatus/查询拍卖物品
@@ -113,6 +113,13 @@
 |request         |{"jsonrpc": "2.0","method": "getAuctionByStatus","params": [10,1],"id": 1}|pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  getAuctionByStatusCount/查询拍卖物品总数
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |query auction goods                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionByStatusCount","params": [],"id": 1}|pages/index|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
 ###  getAuctionRecords/根据地址查询拍卖记录
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
@@ -120,14 +127,26 @@
 |request         |{"jsonrpc": "2.0","method": "getAuctionRecords","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn",10,1],"id": 1}|addr/pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  getAuctionRecordsCount/根据地址查询拍卖记录
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |query auction record                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsCount","params": ["AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn"],"id": 1}|addr|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
 ###  getAuctionRecordsByName/根据拍卖物查询拍卖记录
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
 |description     |query auction record                   |                               |
-|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByName","params": ["aaa",10,1],"id": 1}|name/pages/index|
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByName","params": ["2019/7/30 17:06:43",10,1],"id": 1}|key/pages/index|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
-
+###  getAuctionRecordsByNameCount/根据拍卖物查询拍卖记录
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |query auction record                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByNameCount","params": ["2019/7/30 17:06:43"],"id": 1}|key|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
 
 
