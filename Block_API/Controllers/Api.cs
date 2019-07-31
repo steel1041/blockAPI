@@ -1615,6 +1615,49 @@ namespace NEO_Block_API.Controllers
                         }
                         result = getJAbyKV("recordcount", mh.GetDataCount(mongodbConnStr, mongodbDatabase, "auctionRecord", findFliter));
                         break;
+                    case "getBidPriceByAddr":   //查询拍卖最高价
+                        if (req.@params.Count() == 1)
+                        {
+                            string key = (string)req.@params[0];
+                            result = getJAbyJ(bu.getBidPriceByAddr(mongodbConnStr, mongodbDatabase, "", key));
+                        }
+                        else if (req.@params.Count() == 2) {
+                            string key = (string)req.@params[0];
+                            addr = (string)req.@params[1];
+                            result = getJAbyJ(bu.getBidPriceByAddr(mongodbConnStr, mongodbDatabase, addr, key));
+                        }
+                        break;
+                    case "addAuctionWinner": //添加中奖记录
+                        if (req.@params.Count() == 2)
+                        {
+                            string key = (string)req.@params[0];      //auction key
+                            txid = ((string)req.@params[1]).formatHexStr();            //record的txid
+                            result = getJAbyJ(bu.addAuctionWinner(mongodbConnStr, mongodbDatabase, neoCliJsonRPCUrlLocal, key, txid));
+                        }
+                        break;
+                    case "getAuctionWinner": //查询拍卖中奖记录
+                        findFliter = "{}";
+                        pageCount = 10;
+                        pageNum = 1;
+                        if (req.@params.Count() == 3)
+                        {
+                            string key = (string)req.@params[0];
+                            pageCount = int.Parse(req.@params[1].ToString());
+                            pageNum = int.Parse(req.@params[2].ToString());
+
+                            findFliter = "{key:'" + key + "'}";
+                            sortStr = "{'now':-1}";
+                        }
+                        else if (req.@params.Count() == 2)
+                        {
+                            pageCount = int.Parse(req.@params[0].ToString());
+                            pageNum = int.Parse(req.@params[1].ToString());
+
+                            sortStr = "{'now':-1}";
+                        }
+                        result = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionWinner", sortStr, pageCount, pageNum, findFliter);
+                        result = bu.getAuctionWinner(mongodbConnStr, mongodbDatabase, result);
+                        break;
 
                 }
                 if (result != null && result.Count > 0 && result[0]["errorCode"] != null)

@@ -1957,15 +1957,20 @@ namespace Block_API.Controllers
                 ret.Add("result", false);
                 return ret;
             }
-
+            bool retresult = false;
             DateTime dt = DateTime.Now;
             string key = dt.ToString(); //拍卖物的Key
 
-            NEP55.AuctionGoods gu = new NEP55.AuctionGoods(assetID,key,txid,DateTime.Now);
-            var collectionPro = database.GetCollection<NEP55.AuctionGoods>("auctionGoods");
-            collectionPro.InsertOne(gu);
-
-            ret.Add("result", true);
+            findFliter = "{key:'"+key+"'}";
+            JArray goods = mh.GetData(mongodbConnStr,mongodbDatabase, "auctionGoods",findFliter);
+            if (goods.Count == 0)
+            {
+                NEP55.AuctionGoods gu = new NEP55.AuctionGoods(assetID, key, txid, DateTime.Now);
+                var collectionPro = database.GetCollection<NEP55.AuctionGoods>("auctionGoods");
+                collectionPro.InsertOne(gu);
+                retresult = true;
+            }
+            ret.Add("result", retresult);
             return ret;
         }
 
@@ -1976,7 +1981,7 @@ namespace Block_API.Controllers
                 string txid = (string)ob["txid"];
                 string asset = (string)ob["asset"];
                 string key = (string)ob["key"];
-                string findFliter = "{txid:'"+txid+"',key:'"+key+"',result:1}";
+                string findFliter = "{key:'"+key+"',result:1}";
                 string sortStr = "{now:-1}";
                 JArray result2 = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, 10,1,findFliter);
                 double highPrice = 0.0;
@@ -2044,8 +2049,15 @@ namespace Block_API.Controllers
         internal JObject setAuctionResult(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl, string assetID, string addr, string auctionKey, int mount, string wif)
         {
             JObject ret = new JObject();
-
             bool result = false;
+
+            //判断拍卖物品是否存在
+            string findFliter = "{key:'" + auctionKey + "'}";
+            JArray goods = mh.GetData(mongodbConnStr, mongodbDatabase, "auctionGoods", findFliter);
+            if (goods.Count == 0) {
+                ret.Add("result", result);
+                return ret;
+            }
 
             //判断拍卖物品状态及时间
             JObject result2 = sendTransfer(mongodbConnStr, mongodbDatabase, assetID, neoCliJsonRPCUrl, addr, mount, wif);
@@ -2067,6 +2079,68 @@ namespace Block_API.Controllers
             }
             ret.Add("result", result);
             return ret;
+        }
+
+        internal JObject getBidPriceByAddr(string mongodbConnStr, string mongodbDatabase, string addr, string key)
+        {
+            JObject ret = new JObject();
+            string findFliter = "{}";
+            if (addr != "")
+            {
+                findFliter = "{addr:'" + addr + "',key:'" + key + "',result:1}";
+            }
+            else {
+                findFliter = "{key:'" + key + "',result:1}";
+            }
+            string sortStr = "{now:-1}";
+            JArray result2 = mh.GetDataPages(mongodbConnStr, mongodbDatabase, "auctionRecord", sortStr, 10, 1, findFliter);
+            double highPrice = 0.0;
+            if (result2.Count > 0)
+            {
+                highPrice = (double)result2[0]["mount"];
+            }
+            ret.Add("price",highPrice);
+            return ret;
+        }
+
+        internal JObject addAuctionWinner(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrlLocal, string key, string txid)
+        {
+            JObject ret = new JObject();
+            var client = new MongoClient(mongodbConnStr);
+            var database = client.GetDatabase(mongodbDatabase);
+
+            bool retresult = false;
+            string findFliter = "{txid:'" + txid + "'}";
+            JArray goods = mh.GetData(mongodbConnStr, mongodbDatabase, "auctionWinner", findFliter);
+            if (goods.Count == 0)
+            {
+                NEP55.AuctionWinner gu = new NEP55.AuctionWinner(key, txid, DateTime.Now);
+                var collectionPro = database.GetCollection<NEP55.AuctionWinner>("auctionWinner");
+                collectionPro.InsertOne(gu);
+                retresult = true;
+            }
+            ret.Add("result", retresult);
+            return ret;
+        }
+
+        internal JArray getAuctionWinner(string mongodbConnStr, string mongodbDatabase, JArray result)
+        {
+            foreach (JObject ob in result)
+            {
+                //查询拍卖物最高标价
+                string txid = (string)ob["txid"];
+
+                string findFliter = "{txid:'" + txid + "'}";
+                JArray result3 = mh.GetData(mongodbConnStr, mongodbDatabase, "auctionRecord",findFliter);
+                if (result3.Count > 0)
+                {
+                    JObject goods = (JObject)result3[0];
+                    ob.Add("addr", (string)goods["addr"]);
+                    ob.Add("account", (string)goods["account"]);
+                    ob.Add("mount", (int)goods["mount"]);                }
+            }
+
+            return result;
         }
 
         internal JObject ProcessGoodsGuessInfo(string mongodbConnStr, string mongodbDatabase, string neoCliJsonRPCUrl,string token,string wif)

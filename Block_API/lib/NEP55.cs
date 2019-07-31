@@ -614,6 +614,23 @@ namespace NEO_Block_API
         }
 
         [BsonIgnoreExtraElements]
+        public class AuctionWinner
+        {
+            public AuctionWinner(string Key, string Txid, DateTime Now)
+            {
+                key = Key;
+                txid = Txid;   //代表goods的唯一key
+                now = Now;
+            }
+            public ObjectId _id { get; set; }
+            public string key { get; set; }
+            public string txid { get; set; }
+            public DateTime now { get; set; }
+
+        }
+
+
+        [BsonIgnoreExtraElements]
         public class AuctionRecord
         {
             public AuctionRecord(string Asset, string Key, string Addr,string Account, string Txid,int Mount, DateTime Now)
