@@ -148,6 +148,13 @@
 |request         |{"jsonrpc": "2.0","method": "getAuctionRecordsByNameCount","params": ["2019/7/30 17:06:43"],"id": 1}|key|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
+###  getBidPriceByAddr/查询当前拍卖最高价
+|                |                               |  remark                       |
+|----------------|-------------------------------|-------------------------------|
+|description     |query auction record                   |                               |
+|request         |{"jsonrpc": "2.0","method": "getBidPriceByAddr","params": ["2019/7/30 17:06:43","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn"],"id": 1}|key|
+|response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
+
 
 
 
