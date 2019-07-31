@@ -155,14 +155,14 @@
 |request         |{"jsonrpc": "2.0","method": "getBidPriceByAddr","params": ["2019/7/30 17:06:43","AGa8mQumgxCfWUTWzpLVA77p1NMNw6qBwn"],"id": 1}|key|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           | 
 
-###  addAuctionWinner/添加拍卖终奖记录
+###  addAuctionWinner/添加拍卖中奖记录
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
 |description     |add auction winner record                   |                               |
 |request         |{"jsonrpc": "2.0","method": "addAuctionWinner","params": ["2019/7/30 17:06:43","0xfd1965a09f98fb5fb376ee0e1f8122889799864b075c7e75529351a903b19b10"],"id": 1}|key/record txid|
 |response        |{"jsonrpc":"2.0","id":1,"result":""}                           |
 
-###  getAuctionWinner/查询拍卖终奖记录
+###  getAuctionWinner/查询拍卖中奖记录
 |                |                               |  remark                       |
 |----------------|-------------------------------|-------------------------------|
 |description     |query auction winner record                   |                               |
